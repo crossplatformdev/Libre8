@@ -82,9 +82,9 @@ STA result
 BX result
 ```
 
-You can also define running offset tags to help you to jump (only backwars) to them.
+You can also define running offset tags to help you to jump to (only backwards).
 ```
-;; Same program of above with JNC to tag
+;; Same program as above with JNC to tag
 .data
 one 0000ffh 01
 addOne 0001ffh
@@ -108,14 +108,14 @@ BX result
 To compile any code, you have to save it in a file and pass it
 as an argument to <b>Compiler.java</b>. You can also simply name it "main.as" 
 and place it on root folder of the project. If you run <br/>
-Compiler.java on eclipse it will find out.
+Compiler.java on eclipse it will find ```main.as``` file.
 
 
 # How to run the program inside the schematic with Logisim
 
-To run the simulation, open oe86.circ with Logisim. The file resides
-inside logisim folder. Once the file is loaded, click on labeled RAM component,
-and load the program you previously compiled on the component<br/>
+To run the simulation, open Libre8.circ with Logisim. The file resides
+inside ```logisim``` folder. Once the file is loaded, double click on labelled RAM component,
+(see picture of circuit) and load the program you previously compiled on the component<br/>
 
 Then you can Enable simulation and run clock. 
 
