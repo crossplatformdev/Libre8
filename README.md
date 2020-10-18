@@ -9,6 +9,7 @@ of 16MB of RAM.
 The designs were made with <b>Logisim</b>, the microcode and the compiler
 are writen in <b>Java</b>. The simulation is able to reach up to 4.1 Khz.
 
+![Circuit Image](https://github.com/ElijaxApps/Libre-8/raw/main/CircuitImage.png)
 
 # How to write a program for it: <br />
 
