@@ -18,19 +18,19 @@ Currently must be programmed using Assembly like operations.
 ---------------------------------
 | Code token | Meaning | Examples|
 |------------|---------|---------|
-| ;;  |This is a comment. line will be ignored                                                |;;This is a comment|
-| LDA |Basic Load A register. Is followed by a variable name or an up to 24 bit memory address|LDA one <br />LDA ff0010h|
-| LDB | Similar with B register |
-| LDC | Similar with C register |
-| LDD | Similar with D register |
+| ;;  | This is a comment. line will be ignored                                                |;;This is a comment|
+| LDA | Basic load A register. Always followed by a variable name or an memory address (up to 24 bit)|LDA one <br />LDA ff0010h|
+| LDB | Same as LDA with B register |
+| LDC | Same as LDA with C register |
+| LDD | Same as LDA with D register |
 | STA |Store contents of register A into the following address memory (also up to 24 bit)     |STA one <br />STA ff0010h|
-| STB | Similar with B register |
-| STC | Similar with C register |
-| STD | Similar with D register |
+| STB | Same as STA with B register |
+| STC | Same as STA with C register |
+| STD | Same as STA with D register |
 | OUTA|Echoes the value of register A to LCD Screen                                           |LDA one <br />OUTA (prints value of variable "one")|
-| OUTB | Similar with B register |
-| OUTC | Similar with C register |
-| OUTD | Similar with D register |
+| OUTB | Same as OUTA with B register |
+| OUTC | Same as OUTA with C register |
+| OUTD | Same as OUTA with D register |
 | DEC |Reads a byte from keyboard and stores in A register                                                            | DEC <br/> STA readChar |
 | ADD |Adds the value of the following address or variable to the contents of register A                              | DEC <br/> ADD one     |	
 | SUB |Substracts the value of the following address or variable to the contents of register A                        | DEC <br/> ADD one     |	
@@ -45,7 +45,7 @@ Currently must be programmed using Assembly like operations.
 | BNC |Creates a branch (calls a function)  if Carry Flag != 0                                | BNC offsetOfFunction               |
 | B   |Creates a branch (calls a function) always it is found                                 | B offsetOfFunction                 |
 | BX  |Returns a value contained in the following address                                     | BX returnValueAddress              |
-| NOP | No operation. Just reads the next operator                                            | NOP                                |
+| NOP | No operation. Just reads the next operation                                           | NOP                                |
 | HLT | Halts the computer                                                                    | HLT                                |
 | MOV | Limited, not documented support for some MOV operations. SEE THE CODE!!!              | MOV A, C                           |
 
@@ -63,8 +63,10 @@ one 0000ffh 01
 ;; A function declaration is the same without value
 addOne 0001ffh
 
-;; To start coding you have to write .code (program begin)
+;; To start coding you have to write .code (beginnings of the program)
 .code
+;; Similar to .code, you can define a tag using "."
+;; We are now defining .Main tag. (saving the current offset of the execution in the name of the tag)
 .Main
 ;; We will load value of 'one' var (01) to A and ADD one to its value.
 LDA one
