@@ -437,7 +437,7 @@ public class Compiler {
 	}
 
 	private static void parseData(String line, int counter) throws Exception {
-		String patternString = "([\\-|0-9|a-z|A-Z]+)\\s+([0123456789ABCDEFabcdef]{1,6})h\\s*(([0123456789ABCDEFabcdef]{2})|([\\']{1}[\\w|\\W]{1}[\\']{1}))?";
+		String patternString = "([\\-|0-9|a-z|A-Z]+)\\s+([0123456789ABCDEFabcdef]{1,6})h\\s*(([0123456789ABCDEFabcdef]{2})|([\\']{1}[\\w|\\W|.]{1}[\\']{1}))?";
 		Pattern pattern = Pattern.compile(patternString);
 		if (line == null)
 			return;
