@@ -3,7 +3,7 @@ An 8 bit OpenSource full computer
 
 This is <b>Libre 8</b>, an <b>8 bit OpenSource computer.</b> 
 
-Inspired in the SAP-1 computer (Simplest As Possible). Contains 4 8-bit registers 
+Inspired by the SAP-1 computer (Simplest As Possible). Contains 4 8-bit registers 
 and it is able to address 24-bit memory addresses, having a total ammout
 of 16MB of RAM.
 The designs were made with <b>Logisim</b>, the microcode and the compiler
@@ -20,39 +20,39 @@ Currently must be programmed using Assembly like operations.
 |------------|---------|---------|
 | ;;  |This is a comment. line will be ignored                                                |;;This is a comment|
 | LDA |Basic Load A register. Is followed by a variable name or an up to 24 bit memory address|LDA one <br />LDA ff0010h|
-| LDB | Simmilar with B register |
-| LDC | Simmilar with C register |
-| LDD | Simmilar with D register |
+| LDB | Similar with B register |
+| LDC | Similar with C register |
+| LDD | Similar with D register |
 | STA |Store contents of register A into the following address memory (also up to 24 bit)     |STA one <br />STA ff0010h|
-| STB | Simmilar with B register |
-| STC | Simmilar with C register |
-| STD | Simmilar with D register |
+| STB | Similar with B register |
+| STC | Similar with C register |
+| STD | Similar with D register |
 | OUTA|Echoes the value of register A to LCD Screen                                           |LDA one <br />OUTA (prints value of variable "one")|
-| OUTB | Simmilar with B register |
-| OUTC | Simmilar with C register |
-| OUTD | Simmilar with D register |
-| DEC |Reads a byte from keyboard and stores in A register                                    | DEC <br/> STA readChar |
-| ADD |Adds the value of the following address or variable to the contents of register A      | DEC <br/> ADD one     |	
-| SUB |Substracts the value of the following address or variable to the contents of register A| DEC <br/> ADD one     |	
-| JZ  |Jumps to the folowing address if Zero Flag == 0                                        | JZ addressToJumpTo    |
-| JNZ |Jumps to the folowing address if Zero Flag != 0                                        | JNZ addressToJumpTo   |
-| JC  |Jumps to the folowing address if Carry Flag == 0                                       | JC addressToJumpTo    |
-| JNC |Jumps to the folowing address if Carry Flag != 0                                       | JNC addressToJumpTo   |
-| J   |Jumps always                                                                           | J addressToJumpTo     |
-| BZ  |Creates a branch (calls a function) if Zero Flag == 0                                  | BZ offsetOfFunction   |
-| BNZ |Creates a branch (calls a function)  if Zero Flag != 0                                 | BNZ offsetOfFunction  |
-| BC  |Creates a branch (calls a function)  Carry Flag == 0                                   | BC offsetOfFunction   |
-| BNC |Creates a branch (calls a function)  if Carry Flag != 0                                | BNC offsetOfFunction  |
-| B   |Creates a branch (calls a function) always it is found                                 | B offsetOfFunction    |
-| BX  |Returns a value contained in the following address                                     | BX returnValueAddress |
-| NOP | No operation. Just read the following operator                                        | NOP                   |
-| HLT | Halts the computer                                                                    | HLT                   |
-| MOV | Limited, not docummented support for some MOV operations. SEE THE CODE!!!             | MOV A, C              |
+| OUTB | Similar with B register |
+| OUTC | Similar with C register |
+| OUTD | Similar with D register |
+| DEC |Reads a byte from keyboard and stores in A register                                                            | DEC <br/> STA readChar |
+| ADD |Adds the value of the following address or variable to the contents of register A                              | DEC <br/> ADD one     |	
+| SUB |Substracts the value of the following address or variable to the contents of register A                        | DEC <br/> ADD one     |	
+| JZ  |Jumps to the specified address or to specified address contained within a variable if Zero Flag == 0           | JZ addressToJumpTo, JZ 0000ffh    |
+| JNZ |Jumps to the specified address or to specified address contained within a variable if Zero Flag != 0           | JNZ addressToJumpTo, JNZ 0000ffh  |
+| JC  |Jumps to the specified address or to specified address contained within a variable if Carry Flag == 0          | JC addressToJumpTo,  JC 0000ffh   |
+| JNC |Jumps to the specified address or to specified address contained within a variable if Carry Flag != 0          | JNC addressToJumpTo, JNC 0000ffh  |
+| J   |Jumps always                                                                           | J addressToJumpTo                  |
+| BZ  |Creates a branch (calls a function) if Zero Flag == 0                                  | BZ offsetOfFunction                |
+| BNZ |Creates a branch (calls a function)  if Zero Flag != 0                                 | BNZ offsetOfFunction               |
+| BC  |Creates a branch (calls a function)  Carry Flag == 0                                   | BC offsetOfFunction                |
+| BNC |Creates a branch (calls a function)  if Carry Flag != 0                                | BNC offsetOfFunction               |
+| B   |Creates a branch (calls a function) always it is found                                 | B offsetOfFunction                 |
+| BX  |Returns a value contained in the following address                                     | BX returnValueAddress              |
+| NOP | No operation. Just reads the next operator                                            | NOP                                |
+| HLT | Halts the computer                                                                    | HLT                                |
+| MOV | Limited, not documented support for some MOV operations. SEE THE CODE!!!              | MOV A, C                           |
 
 #Example program:
 ```
 ;; This is a comment
-;; First thing is data and function offset declaration.
+;; First thing is to write .data, and variables and function offset declaration below.
 .data
 
 ;; Here we can define variables or function offsets.
@@ -63,7 +63,7 @@ one 0000ffh 01
 ;; A function declaration is the same without value
 addOne 0001ffh
 
-;; The following is the start of coding
+;; To start coding you have to write .code (program begin)
 .code
 .Main
 ;; We will load value of 'one' var (01) to A and ADD one to its value.
