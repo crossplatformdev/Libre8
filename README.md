@@ -1,9 +1,13 @@
 # Libre-8
 An 8 bit OpenSource full computer
 
-This is <b>Libre 8</b>, an <b>8 bit OpenSource computer.</b><br /> 
-The designs were made with <b>Logisim</b>, the microcode and the compiler<br />
-are writen in <b>Java</b>.<br />
+This is <b>Libre 8</b>, an <b>8 bit OpenSource computer.</b> 
+
+Inspired in the SAP-1 computer (Simplest As Possible). Contains 4 8-bit registers 
+and it is able to address 24-bit memory addresses, having a total ammout
+of 16MB of RAM.
+The designs were made with <b>Logisim</b>, the microcode and the compiler
+are writen in <b>Java</b>. The simulation is able to reach up to 4.1 Khz.
 
 
 # How to write a program for it: <br />
