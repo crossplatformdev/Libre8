@@ -1,4 +1,12 @@
-;; (THIS IS A COMMENT)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Interactive menu with functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; This program displays a numerated 
+;; menu. You can type then a number selecting 
+;; the corresponding option. You will be asked 
+;; to introduce numbers or a string
+
 ;; Data declaration
 .data
 charPtr ff10ffh  ff
