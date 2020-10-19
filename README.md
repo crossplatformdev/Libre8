@@ -49,7 +49,7 @@ Currently must be programmed using Assembly like operations.
 | HLT | Halts the computer                                                                    | HLT                                |
 | MOV | Limited, not documented support for some MOV operations. SEE THE CODE!!!              | MOV A, C                           |
 
-#Example program:
+# Example program:
 ```
 ;; This is a comment
 ;; First thing is to write .data, and variables and function offset declaration below.
