@@ -1,0 +1,12 @@
+*.i
+*.o
+*.class
+*.log
+*.swp
+.vscode
+.settings
+rogue-3.1
+rogue3.6
+tinycpp-master
+*.as
+*.old

@@ -67,7 +67,8 @@ name9		0400f7h 00
 B printAskLength
 B read
 ;;We demote read value (char) to (int)
-SUB toInt 
+LDA readValue
+SUB toInt
 STA length
 B printAskName
 B readName

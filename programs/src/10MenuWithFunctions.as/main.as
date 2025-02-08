@@ -9,8 +9,11 @@
 
 ;; Data declaration
 .data
+msgCR	ff07ffh  0a
+operand ff08ffh  00
+caseCtr ff09ffh  00
 charPtr ff10ffh  ff
-char	ff11ffh  00
+caseCtr	ff11ffh  00
 one		ff12ffh  01
 zero	ff12feh  00
 foo     ff13ffh  00
@@ -22,6 +25,7 @@ int     ff15ffh  99
 slash	ff16ffh  47
 percent ff17ffh  37
 space   ff18ffh  20
+
 
 menuStr0 0bffffh 0a
 menuStr1 0bfffeh 'M'
@@ -207,7 +211,6 @@ menuStr180 0bff4bh 'n'
 menuStr181 0bff4ah ':'
 menuStr182 0bff49h 20
 
-msgCR	c0ffffh 0a
 msgStr0 c0ffffh 0a
 msgStr1 c0fffeh 'P'
 msgStr2 c0fffdh 'l'
@@ -294,96 +297,108 @@ storeStringD e000f2h 00
 storeStringE e000f1h 00
 storeStringF e000f0h 00
 
-;; Function headers (could point anywhere)
-readCharWithEcho    200000h
-readIntWithEcho     250000h
-printMenu			301000h
-printResultMsg		302000h
-printMsg			303000h
-printEchoMsg		304000h
-subOne				401100h
-subFoo				401200h
-countOne			501150h
-sub 				601200h
-add 				701300h
-mul 				801400h
-div 				901500h
-echoString			a01600h
+readNum		e12342h 00
+res		    ffffffh ff
 
-bonus				C0FFEEh
+;; Function headers (could point anywhere)
+readIntWithEcho     100000h
+readOperand			200000h
+printMenu			300000h
+printResultMsg		400000h
+printMsg			500000h
+printEchoMsg		600000h
+decrementAndStoreInt				700000h
+;;subFoo				800000h
+countOne			900000h
+sub 				121000h
+add 				131000h
+mul 				141000h
+div 				151000h
+echoString			114a11h
+
+bonus				bbcafeh
 
 ;; Start of code
 .code
-
 ;; Declaration of Main
 .Main
 B printMenu
-B readCharWithEcho
-LDA char
-SUB toInt
-STA char
-LDA char
-B subOne
+B readIntWithEcho
+
+B decrementAndStoreInt
 BZ add
-LDA char
-B subOne
+B decrementAndStoreInt
+JB Main
+
+B decrementAndStoreInt
 BZ sub
-LDA char
-B subOne
+B decrementAndStoreInt
+JB Main
+
+B decrementAndStoreInt
 BZ div
-LDA char
-B subOne
+B decrementAndStoreInt
+JB Main
+
+B decrementAndStoreInt
 BZ mul
-LDA char
-B subOne
+B decrementAndStoreInt
+JB Main
+
+B decrementAndStoreInt
 BZ echoString
-LDA char
-B subOne
+B decrementAndStoreInt
+JB Main
+
+B decrementAndStoreInt
 BZ bonus
+B decrementAndStoreInt
+JB Main
+
 JMP Main
+
+
 
 .bonus
 ;; TO DO
-
-
 BX 000000h
 
 .echoString
 B printEchoMsg
-B readCharWithEcho
+B readIntWithEcho
 STA storeString0
-B readCharWithEcho
+B readIntWithEcho
 STA storeString1
-B readCharWithEcho
+B readIntWithEcho
 STA storeString2
-B readCharWithEcho
+B readIntWithEcho
 STA storeString3
 
-B readCharWithEcho
+B readIntWithEcho
 STA storeString4
-B readCharWithEcho
+B readIntWithEcho
 STA storeString5
-B readCharWithEcho
+B readIntWithEcho
 STA storeString6
-B readCharWithEcho
+B readIntWithEcho
 STA storeString7
 
-B readCharWithEcho
+B readIntWithEcho
 STA storeString8
-B readCharWithEcho
+B readIntWithEcho
 STA storeString9
-B readCharWithEcho
+B readIntWithEcho
 STA storeStringA
-B readCharWithEcho
+B readIntWithEcho
 STA storeStringB
 
-B readCharWithEcho
+B readIntWithEcho
 STA storeStringC
-B readCharWithEcho
+B readIntWithEcho
 STA storeStringD
-B readCharWithEcho
+B readIntWithEcho
 STA storeStringE
-B readCharWithEcho
+B readIntWithEcho
 STA storeStringF
 
 LDA msgCR
@@ -424,62 +439,57 @@ LDA storeStringE
 OUTA
 LDA storeStringF
 OUTA
-BX 00h
+BX 000000h
 
 ;; foo: dividend, bar: divider, baz: remainder, var: division
 .div
 B printMsg
-B readCharWithEcho
-SUB toInt
+B readOperand
 STA foo
 B printMsg
-B readCharWithEcho
-SUB toInt
+B readOperand
 STA bar
 LDA zero
-STA var
+STA res
+
 .divide
-LDA var
+LDA res
 ADD one
-STA var
+STA res
 LDA foo
 SUB bar
 STA foo
 JNZ divide
 B printResultMsg
-LDA var
-ADD toInt
-STA var
 OUTA
-BX var
+BX res
 
 
 ;; foo: firstOp, bar: secondOp, baz: counter, var: multipication
 .mul
+.aMayor
 B printMsg
-B readCharWithEcho
-SUB toInt
+B readOperand
 STA foo
 B printMsg
-B readCharWithEcho
-SUB toInt
+B readOperand
 STA bar
 LDA zero
-STA var
+STA res
 .multiply
-LDA var
+LDA res
 ADD bar
-STA var
+STA res
 LDA foo
 SUB one
 STA foo
 JNZ multiply
 B printResultMsg
-LDA var
-ADD toInt
-STA var
 OUTA
-BX var
+BX res
+
+
+
 
 .countOne
 LDA var
@@ -489,69 +499,63 @@ BX var
 
 .add
 B printMsg
-B readCharWithEcho
-STA bar
-B printMsg
-B readCharWithEcho
+B readOperand
 STA foo
-LDA bar
+B printMsg
+B readOperand
+STA bar
 ADD foo
-SUB toInt
-STA var
+STA res
 B printResultMsg
-LDA var
-OUTA
-BX var
+BX res
 
 .sub
 B printMsg
-B readCharWithEcho
+B readOperand
 STA bar
 B printMsg
-B readCharWithEcho
+B readOperand
 STA foo
 LDA bar
 SUB foo
-ADD toInt
-STA var
+STA res
 B printResultMsg
-LDA var
+LDA res
 OUTA
-BX var
+BX res
 
 
-.subOne
-LDA char
+.decrementAndStoreInt
+LDA caseCtr
 SUB one
-STA char
-BX char
+STA caseCtr
+BX caseCtr
 
-.subFoo
-LDA foo
-SUB bar
-STA foo
-BX foo
-
-.readCharWithEcho
-DEC 
-STA char
-LDA char
-OUTA
-BX char
-
+;;.subFoo
+;;LDA foo
+;;SUB bar
+;;STA foo
+;;BX foo
 
 .readIntWithEcho
-B readCharWithEcho
-LDA char
+DECE
+STA readNum
+LDA readNum
 SUB toInt
-STA int
-LDA int 
-BX int 
+STA readNum
+BX readNum
+
+.readOperand
+DECE
+STA operand
+LDA operand
+SUB toInt
+STA operand
+BX operand
 
 .printMenu
 LDA msgCR
 OUTA
-
 LDA menuStr0
 OUTA
 LDA menuStr1
@@ -918,10 +922,9 @@ LDA menuStr181
 OUTA
 LDA menuStr182
 OUTA
-
 LDA msgCR
 OUTA
-BX 00h
+BX 000000h
 
 .printMsg
 LDA msgCR
@@ -976,10 +979,10 @@ LDA msgStr23
 OUTA
 LDA msgCR
 OUTA
-BX 00h
+BX 000000h
 
 
-.printResultMsg
+.printReultMsg
 LDA msgCR
 OUTA
 LDA resultStr0
@@ -1002,7 +1005,10 @@ LDA resultStr8
 OUTA
 LDA msgCR
 OUTA
-BX 00h
+LDA res
+ADD toInt
+OUTA
+BX res
 
 .printEchoMsg
 LDA echoMsgStr0
@@ -1071,4 +1077,4 @@ LDA echoMsgStr31
 OUTA
 LDA echoMsgStr32
 OUTA
-BX 00h
+BX 000000h

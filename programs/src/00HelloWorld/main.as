@@ -49,3 +49,4 @@ LDA excl
 OUTA
 LDA cReturn
 OUTA
+HLT

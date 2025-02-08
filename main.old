@@ -1,0 +1,49 @@
+;;;;;;;;;;;;;;;;;
+;; Hello Function
+;;;;;;;;;;;;;;;;;
+
+
+;; The following program just prints "Hello, World!"
+.data
+
+excl 	0000afh '!'
+cReturn 0000f5h 0a
+one		0000f4h 01
+printHelloWorld 000200h arg1 arg2
+
+;; Start of coding
+.code
+
+.Main
+;; Call to the function printHelloWorld.
+;; It will jump to printHelloWorld offset.
+;; Will return to this run point when finds BX
+
+LDA excl
+PSAX 
+LDA cReturn
+PSAX
+
+
+B printHelloWorld
+
+;; Start over Main
+JMP Main
+
+
+
+;; Function definition at above memory offset
+.printHelloWorld
+
+POPX
+STA arg1
+POPX
+STA arg2
+
+LDA arg1
+OUTA
+LDA arg2
+OUTA
+
+
+BX 000000h
