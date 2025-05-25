@@ -297,17 +297,10 @@ public class MicroCodeV8 {
 		fetch();
 		
 		long[] operations = {
-			Signals.MEMD + Signals.RO,
-			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
-			Signals.MEMC + Signals.RO,
-			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
-			Signals.MEMB + Signals.RO,
-			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
-			Signals.MEMA + Signals.RO,
-			Signals.CO + Signals.MI + +Signals.RO + Signals.CE
+
 		};
 
-		bit24Indirection(true, true, true, operations);
+		bit24Indirection(true, true, false, operations);
 
 		write(Signals.clpcr);
 	}
@@ -317,14 +310,8 @@ public class MicroCodeV8 {
 		fetch();
 		
 		long[] operations = {
-			Signals.DMEM + Signals.RW,
-			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
-			Signals.CMEM + Signals.RW,
-			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
-			Signals.BMEM + Signals.RW,
-			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
 			Signals.AMEM + Signals.RW,
-			Signals.CO + Signals.MI + +Signals.RO + Signals.CE
+			Signals.CO + Signals.MI + Signals.RO + Signals.CE,
 		};
 
 		bit24Indirection(true, true, true, operations);
@@ -333,8 +320,29 @@ public class MicroCodeV8 {
 	}
 
 	private static void createPTRI(int icuadrant, long ptri) throws Exception {
-		createPTRL(icuadrant, ptri);
-		write(+Signals.MEMA + Signals.O0 + Signals.ALU_DIV + Signals.ALU_SUB + Signals.ANDOR + Signals.ALU_EOUT);		
+		setOffset(ptri, icuadrant);
+		fetch();
+		
+		// Advance RAM point
+		for(int l = 0 ; l < 3; l++) {
+			readOneNotWrite();
+			write(Signals.RO + Signals.MEMD);
+			write(Signals.SHIN + Signals.DMEM);
+		}
+
+		write(Signals.CO);
+		write(Signals.SHOUT + Signals.LR0 + Signals.LRW);
+		write(Signals.SHOUT + Signals.LR2 + Signals.LRW);
+		write(Signals.SHOUT + Signals.LR0 + Signals.LR2 + Signals.LRW);
+		write(Signals.SHOUT);
+		
+		write(Signals.CPP);
+
+		//Add 1 to the byte in LR0 + LR2
+		long index = write(Signals.LR2 + Signals.LR0 + Signals.MEMA);		
+		write(Signals.RO + Signals.MEMB);
+		write(Signals.FI + Signals.ALU_EOUT + Signals.SUM);
+		write(Signals.clpcr);
 	}
 
 	private static void createPOKE(int icuadrant, long poke, long... operations) throws Exception {
@@ -696,8 +704,8 @@ public class MicroCodeV8 {
 		fetch();
 
 		// bit24Indirection(true, true, true, operation1, operation2);
-		write(Signals.CO + Signals.MI);
-		write(Signals.RO + Signals.MEMB + Signals.CE);
+		readOneNotWrite();
+		write(Signals.RO + Signals.MEMB);
 		write(Signals.FI + Signals.ALU_EOUT + d);
 		write(Signals.clpcr);
 	}
@@ -734,25 +742,18 @@ public class MicroCodeV8 {
 			// do PC operations mixed with RAM			
 
 			// Advance RAM point
-			readOneNotWrite();
-			write(Signals.RO + Signals.MEMA);
-			readOneNotWrite();
-			write(Signals.RO + Signals.MEMB);
-			readOneNotWrite();
-			write(Signals.RO + Signals.MEMC);
-			readOneNotWrite();
-			write(Signals.RO + Signals.MEMD);
-
-			write(Signals.SHIN + Signals.DMEM);
-			write(Signals.SHIN + Signals.CMEM);
-			write(Signals.SHIN + Signals.BMEM);
-			write(Signals.SHIN + Signals.AMEM);
+			for(int l = 0 ; l < 3; l++) {
+				readOneNotWrite();
+				write(Signals.RO + Signals.MEMD);
+				write(Signals.SHIN + Signals.DMEM);
+			}
 
 			// We should, first of all, let the breadcrumb.
 			// That will let us make use of REG A.
 			if (withJtoStack) {
 				
 				write(Signals.CO);
+				write(Signals.SHOUT + Signals.LRW);
 				write(Signals.SHOUT + Signals.LR0 + Signals.LRW);
 				write(Signals.SHOUT + Signals.LR2 + Signals.LRW);
 				write(Signals.SHOUT + Signals.LR0 + Signals.LR2 + Signals.LRW);

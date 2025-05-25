@@ -3,29 +3,26 @@ char K = 'K';
 char newLine = '\n';
 
 int *IN_STR_PTR = 0xfffffd00;
-
-
 int IN_STR_CTR = 0;
 int IN_CHAR = 0;
-
 int *STR_PTR = 0xfffffe00;
-
 int _A = 0xff;
 int _B = 0xff;
-
 int _IF_BYTE = 0xff;
-
 int *IF_PTR = 0xfffffd00;
-
 int _IF_LEFT = 0xff;
 int _IF_RIGHT = 0xff;
-
 int _AUX_1 = 0x00;
 
 void prompt();
 void insert_char();
 void input();
 void _if_eq();
+void _if_neq();
+void _if_gt();
+void _if_lt();
+void _if_gte();
+void _if_lte();
 void print_char();
 void print_str();
 void eval_input();
@@ -34,6 +31,7 @@ void sub();
 void mul();
 void div();
 
+//Prompt: Prints "OK" and a new line
 void prompt(){
     _asm{
         LDA O
@@ -46,16 +44,16 @@ void prompt(){
     }
 }
 
+//Inserts a character into the string pointer and increments the pointer
 void insert_char(){
     __asm{
-       LDA IN_CHAR
-       STA STR_PTR_A^^STR_PTR_B^^STR_PTR_C^^STR_PTR_D
-       LDA STR_PTR_D
-       ADD _1
-       STA STR_PTR_D
-       BX _00
+        PTRL IN_STR_PTR
+        STA IN_CHAR
+        PTRI IN_STR_PTR
+        BX _00
     }
 }
+
 
 void input(){
     __asm{

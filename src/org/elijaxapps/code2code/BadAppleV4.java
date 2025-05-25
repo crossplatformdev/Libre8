@@ -6,6 +6,7 @@ import java.io.IOException;
 
 public class BadAppleV4 {
 
+    private static final int FRAMES_AMMOUNT = 7009; // Total number of frames
     //Funtion to open a textfile and return it as string
     public static String readTextFile(String filename) {
         StringBuilder content = new StringBuilder();
@@ -34,22 +35,28 @@ public class BadAppleV4 {
             writer.print(".run\n");
 
             writer.print("\n");
-            String[] frames = new String[1834 - 0];
+            String[] frames = new String[FRAMES_AMMOUNT - 0];
 
-            char[][][] bytes = new char[(1834-0)][32][145];
-            for(int i = 0; i < 1834 - 0; i+=1){
+            char[][][] bytes = new char[(FRAMES_AMMOUNT-0)][32][128];
+            for(int i = 1; i < FRAMES_AMMOUNT - 0; i+=1){
                 String ii = "" + (i + 0);
+                while (ii.length() < 8){
+                    ii = "0" + ii; // Pad with leading zeros to ensure 4 digits
+                }
                 int counter = 0;
                     
-                frames[i] = readTextFile("frames/resized-__" + ii + ".txt");
+                frames[i] = readTextFile("frames/frame" + ii + ".png.txt");
                 for(int y = 0; y < 32; y++){
                     writer.print("POKE ");
-                    for (int x = 0; x < 145; x++) { 
-                        writer.print(frames[i].charAt(counter));
+                    for (int x = 0; x < 72; x++) { 
+                        String ch1 = "" + '@'; 
+                        String ch2 = "" + frames[i].charAt((y * 73) + x);
+                        String str = ch1.equals(ch2) ? "FF" : "00";
+                        writer.print(str);
                         counter += 1;  
                     }
                     
- //                   writer.print("\n");
+                    writer.print("\n");
                 }
             
             }
