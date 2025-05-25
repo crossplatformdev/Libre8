@@ -4,7 +4,7 @@ import java.io.PrintWriter;
 
 public class MicroCodeV8 {
 
-	private static int WORD = (int) 35;
+	private static int WORD = (int) 36;
 	private static final int MEM_COLS = 8;
 	private static final int MEM_DIGITS = WORD / 4;
 	private static final int LENGTH = (int) (0x800000);
@@ -121,6 +121,11 @@ public class MicroCodeV8 {
 	private static long BX = 0x8900;
 	private static long RST = 0x7700;
 	private static long PST = 0x7800;
+
+	private static long PTRI = 0x7900; //Pointer increment
+	private static long PTRD = 0x7a00; //Pointer decrement
+	private static long PTRL = 0x7b00; //Pointer load (indirection to the pointer, once there. is load the next 4 bytes, with the values of registers A, B, C, D)
+	private static long PTRS = 0x7c00; //Pointer store (indirection to the pointer, once there. is store the next 4 bytes, with the values of registers A, B, C, D)
 
 	private static long LDR = 0xaa00;
 	private static int icuadrant;
@@ -257,16 +262,22 @@ public class MicroCodeV8 {
 			createHLT(icuadrant);
 			createNOP(icuadrant);
 
-			createST(icuadrant, STA, Signals.AMEM);
-			createST(icuadrant, STB, Signals.BMEM);
-			createST(icuadrant, STC, Signals.CMEM);
-			createST(icuadrant, STD, Signals.DMEM);
+			createST(icuadrant, STA, Signals.AMEM + Signals.RW);
+			createST(icuadrant, STB, Signals.BMEM + Signals.RW);
+			createST(icuadrant, STC, Signals.CMEM + Signals.RW);
+			createST(icuadrant, STD, Signals.DMEM + Signals.RW);
 
 			
 			createPOKE(icuadrant, POKX, Signals.REG_A + Signals.RO + Signals.POKE);
 			createPOKE(icuadrant, POKY, Signals.REG_B + Signals.RO + Signals.POKE);
 			createPOKE(icuadrant, POKE, Signals.REG_C + Signals.RO + Signals.POKE);
 			createPXYD(icuadrant, PXYD);
+
+			createPTRI(icuadrant, PTRI);
+			//createPTRD(icuadrant, PTRD);
+			createPTRL(icuadrant, PTRL);
+			createPTRS(icuadrant, PTRS);
+
 		}
 
 		String str = dump();
@@ -279,6 +290,51 @@ public class MicroCodeV8 {
 			e.printStackTrace();
 		}
 
+	}
+
+	private static void createPTRL(int icuadrant, long ptrl) throws Exception {
+		setOffset(ptrl, icuadrant);
+		fetch();
+		
+		long[] operations = {
+			Signals.MEMD + Signals.RO,
+			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
+			Signals.MEMC + Signals.RO,
+			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
+			Signals.MEMB + Signals.RO,
+			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
+			Signals.MEMA + Signals.RO,
+			Signals.CO + Signals.MI + +Signals.RO + Signals.CE
+		};
+
+		bit24Indirection(true, true, true, operations);
+
+		write(Signals.clpcr);
+	}
+
+	private static void createPTRS(int icuadrant, long ptrs) throws Exception {
+		setOffset(ptrs, icuadrant);
+		fetch();
+		
+		long[] operations = {
+			Signals.DMEM + Signals.RW,
+			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
+			Signals.CMEM + Signals.RW,
+			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
+			Signals.BMEM + Signals.RW,
+			Signals.CO + Signals.MI + +Signals.RO + Signals.CE,
+			Signals.AMEM + Signals.RW,
+			Signals.CO + Signals.MI + +Signals.RO + Signals.CE
+		};
+
+		bit24Indirection(true, true, true, operations);
+
+		write(Signals.clpcr);
+	}
+
+	private static void createPTRI(int icuadrant, long ptri) throws Exception {
+		createPTRL(icuadrant, ptri);
+		write(+Signals.MEMA + Signals.O0 + Signals.ALU_DIV + Signals.ALU_SUB + Signals.ANDOR + Signals.ALU_EOUT);		
 	}
 
 	private static void createPOKE(int icuadrant, long poke, long... operations) throws Exception {
@@ -337,7 +393,7 @@ public class MicroCodeV8 {
 	private static void call(long icuadrant, long instruction) throws Exception {
 		setOffset(instruction, icuadrant);
 		fetch();
-		bit24Indirection(true, true, false);
+		bit24Indirection(true, true, false, Signals.MEMA + Signals.RO);
 		write(Signals.clpcr);
 	}
 
@@ -467,7 +523,7 @@ public class MicroCodeV8 {
 		setOffset(instruction, icuadrant);
 		fetch();
 
-		bit24Indirection(true, true, true, register + Signals.RW);
+		bit24Indirection(true, true, true, register);
 		write(Signals.clpcr);
 	}
 
@@ -555,16 +611,17 @@ public class MicroCodeV8 {
 		fetch();
 
 
-		bit24Indirection(true, true, true, Signals.MEMA + Signals.RO);
+		bit24Indirection(true, false, true, Signals.MEMA + Signals.RO);
 		
 		write(Signals.CMM);
+		/* 
+		write(Signals.SHIN + Signals.LR0);
+		write(Signals.SHIN + Signals.LR2);
+		write(Signals.SHIN + Signals.LR0 + Signals.LR2);
+		write(Signals.SHIN + Signals.LR0 + Signals.LR2);
 
-		write(Signals.LR0 + Signals.SHIN);
-		write(Signals.LR2 + Signals.SHIN);
-		write(Signals.LR0 + Signals.LR2 + Signals.SHIN);
-
-		write(Signals.JMP);
-		
+		write(Signals.JMP + Signals.RO);
+		*/
 		write(Signals.clpcr);
 	}
 
@@ -594,11 +651,25 @@ public class MicroCodeV8 {
 		write(Signals.clpcr);
 	}
 
-	private static void jump(long icuadrant, long jMP2) throws Exception {
-		setOffset(jMP2, icuadrant);
+	private static void jump(long icuadrant, long JMP) throws Exception {
+		setOffset(JMP, icuadrant);
 		fetch();
 
-		bit24Indirection(true, true, false);
+		readOneNotWrite();
+		write(Signals.RO + Signals.MEMA);
+		readOneNotWrite();
+		write(Signals.RO + Signals.MEMB);
+		readOneNotWrite();
+		write(Signals.RO + Signals.MEMC);
+		readOneNotWrite();
+		write(Signals.RO + Signals.MEMD);
+
+		write(Signals.SHIN + Signals.DMEM);
+		write(Signals.SHIN + Signals.CMEM);
+		write(Signals.SHIN + Signals.BMEM);
+		write(Signals.SHIN + Signals.AMEM);
+
+		write(Signals.JMP + Signals.RO);
 		write(Signals.clpcr);
 	}
 
@@ -664,14 +735,19 @@ public class MicroCodeV8 {
 
 			// Advance RAM point
 			readOneNotWrite();
-			write(Signals.RO + Signals.SHIN);
+			write(Signals.RO + Signals.MEMA);
 			readOneNotWrite();
-			write(Signals.RO + Signals.SHIN);
+			write(Signals.RO + Signals.MEMB);
 			readOneNotWrite();
-			write(Signals.RO + Signals.SHIN);
+			write(Signals.RO + Signals.MEMC);
 			readOneNotWrite();
-			write(Signals.RO + Signals.SHIN);
-			
+			write(Signals.RO + Signals.MEMD);
+
+			write(Signals.SHIN + Signals.DMEM);
+			write(Signals.SHIN + Signals.CMEM);
+			write(Signals.SHIN + Signals.BMEM);
+			write(Signals.SHIN + Signals.AMEM);
+
 			// We should, first of all, let the breadcrumb.
 			// That will let us make use of REG A.
 			if (withJtoStack) {
@@ -707,11 +783,10 @@ public class MicroCodeV8 {
 			// BEFORE a pop, we have to Decrement Stack polonger...
 			write(Signals.CMM);
 			
-			write(Signals.SHIN + Signals.LR0 + Signals.LR2);
-			write(Signals.SHIN + Signals.LR0 + Signals.LR2);
-			write(Signals.SHIN + Signals.LR2);
 			write(Signals.SHIN + Signals.LR0);
-
+			write(Signals.SHIN + Signals.LR2);
+			write(Signals.SHIN + Signals.LR0 + Signals.LR2);
+			write(Signals.SHIN + Signals.LR0 + Signals.LR2);
 
 			write(Signals.JMP + Signals.RO);
 			write(Signals.CO + Signals.MI);
@@ -890,7 +965,7 @@ public class MicroCodeV8 {
 		private static long HALT =   		0b1_0000_0000_0000_0000_0000_0000_0000_0000L; // 36 // HALT
 		private static long POKE = 			0b1_0000_0000_0000_0000_0000_0000_0000_0000_0L; // 37 // POKE INSTRUCTION
 		private static long clpcr = 		0b1_0000_0000_0000_0000_0000_0000_0000_0000_00L; // 38 // Clock Pulse
-
+		private static long ANDOR =         0b1_0000_0000_0000_0000_0000_0000_0000_0000_000L; // 39 // AND OR
 
 		private static long PARITY_FLAG0 = 0b0_0000;
 		private static long PARITY_FLAG1 = 0b1_0000_0000_0000_0000L;
@@ -929,7 +1004,7 @@ public class MicroCodeV8 {
 		private static long MEMC = REG_C + 0 + 0 + 0 + Signals.LD;
 		private static long MEMD = REG_D + 0 + 0 + 0 + Signals.LD; // b
 
-		private static long CMEM = REG_C + 0 + 0 + 0 + Signals.O0; // c
+		private static long CMEM = REG_C + Signals.O0; // c
 		private static long CTOA = REG_C + 0 + REG_A + Signals.LD + Signals.O0; // d
 		private static long CTOB = REG_C + REG_B + Signals.LD + Signals.O0; // e
 		private static long DMEM = REG_D + Signals.O0; // f

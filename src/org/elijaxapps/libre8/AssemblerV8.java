@@ -134,6 +134,12 @@ public class AssemblerV8 {
 	private static long RST = 0x77;
 	private static long PST = 0x78;
 
+	private static long PTRI = 0x79; //Pointer increment
+	private static long PTRD = 0x7a; //Pointer decrement
+	private static long PTRL = 0x7b; //Pointer load (indirection to the pointer, once there. is load the next 4 bytes, with the values of registers A, B, C, D)
+	private static long PTRS = 0x7c; //Pointer store (indirection to the pointer, once there. is store the next 4 bytes, with the values of registers A, B, C, D)
+
+
 	private static long LDR = 0xaa;
 
 	public static final int size = 16 * 1024 * 1024;
@@ -168,8 +174,8 @@ public class AssemblerV8 {
 	static HashMap<String, String> argsMap = new HashMap<String, String>();
 	private static String clean;
 
-	public static void main(String[] args) throws Exception {
-
+	public static void run(String[] args) throws Exception {
+		
 		// Format hex
 		for (int i = 0; i < mem0.length; i++) {
 			mem0[i] = new String("00");
@@ -225,7 +231,10 @@ public class AssemblerV8 {
 			System.out.println(e.getMessage());
 			throw e;
 		}
+	}
 
+	public static void main(String[] args) throws Exception {
+		run(args);
 	}
 
 	private static void runCompiler(int counter) throws Exception {
@@ -274,6 +283,10 @@ public class AssemblerV8 {
 
 			if (code) {
 				if (!clean.startsWith("end") || !clean.equals("")) {
+					if(clean.contains(";;")){
+						clean = clean.split(";;")[0];
+						clean = clean.trim();
+					}
 					offset = parseInstruction(clean, counter);
 				}
 			} else if (data) {
@@ -318,15 +331,8 @@ public class AssemblerV8 {
 			if (replacedVar != null) {
 				String functionName = replacedVar;
 
-				if(replacedVar.contains("^^")) {
-					String[] args = replacedVar.split("^^");
-					
-					replacedVar = "";
-					for(String arg : args) {
-						replacedVar += arg + " ";
-					}
-
-					replacedVar = replacedVar.trim();
+				if(replacedVar.contains("*")) {
+					//replacedVar = replacedVar.replaceAll("\\*", "").trim();					
 				}
 
 				if (fMap.containsKey(replacedVar)) {
@@ -434,7 +440,11 @@ public class AssemblerV8 {
 				instructionHex = Long.toHexString(ADD);
 			} else if (instruction.equals("SUB")) {
 				instructionHex = Long.toHexString(SUB);
-			} else if (instruction.equals("IADD")) {
+			}  else if (instruction.equals("MUL")) {
+				instructionHex = Long.toHexString(MUL);
+			} else if (instruction.equals("DIV")) {
+				instructionHex = Long.toHexString(DIV);		
+		    } else if (instruction.equals("IADD")) {
 				instructionHex = Long.toHexString(IADD);
 			} else if (instruction.equals("ISUB")) {
 				instructionHex = Long.toHexString(ISUB);
@@ -465,6 +475,14 @@ public class AssemblerV8 {
 				instructionHex = Long.toHexString(LDI);
 			} else if (instruction.equals("HLT")) {
 				instructionHex = Long.toHexString(HLT);
+			} else if (instruction.equals("PTRI")) {
+				instructionHex = Long.toHexString(PTRI);
+			} else if (instruction.equals("PTRD")) {
+				instructionHex = Long.toHexString(PTRD);
+			} else if (instruction.equals("PTRL")) {
+				instructionHex = Long.toHexString(PTRL);
+			} else if (instruction.equals("PTRS")) {
+				instructionHex = Long.toHexString(PTRS);
 			} else if (instruction.equals("MOV")) {
 				String slug = matcher.group(4).replaceAll("\\s", "").replaceAll(",", "").toUpperCase();
 				if (slug == null) {
@@ -535,6 +553,12 @@ public class AssemblerV8 {
 				mem0[offset] = instructionHex;
 				offset += 1;
 
+				boolean isPointer = false;
+				if(replacedVar.contains("*")) {
+					replacedVar = replacedVar.replaceAll("\\s", "");
+					isPointer = true;
+				}
+
 				if (replacedVar != null && !isSingleToken) {
 					Pattern mb = Pattern.compile(
 							"([0123456789ABCDEFabcdef]{2})([0123456789ABCDEFabcdef]{2})([0123456789ABCDEFabcdef]{2})([0123456789ABCDEFabcdef]{2})h?");
@@ -553,6 +577,7 @@ public class AssemblerV8 {
 							offset += 1;
 						}
 					} else {
+
 						Pattern mbyte = Pattern.compile("([0123456789abcdefABCDEF]){144}");
 						
 						Matcher mb2 = mbyte.matcher(replacedVar);
@@ -647,21 +672,29 @@ public class AssemblerV8 {
 				} else {
 					isVar = false;
 					String[] arguments = null;
+					
 					if (value.contains(" ")) {
 						// value is argument list
 						arguments = value.split("\\s");
 					} else {
-						arguments = new String[] { value };
+						if(value!=null) {
+							value = value.trim();
+							if(value.contains(",")) {
+								arguments = value.split(",");
+							} else {
+								arguments = new String[] { value };
+							}
+						}
 					}
 
-					Integer ctr = 0; // Here at least we got 1 arg, plus min offset 1 (1+1)
+					Integer ctr = 0; 
 					String addr = "";
 					for (String arg : arguments) {
 						addr = Integer.toHexString(Integer.valueOf(address, 16).intValue() + Integer.valueOf(""+ctr,16).intValue()).toString();
 						while(addr.length()<8) {
 							addr = "0"+addr;
 						}
-						varsMap.put(arg, addr);
+						argsMap.put(arg, addr);
 						ctr += 1;
 					}
 					addr = Integer.toHexString(Integer.valueOf(address, 16).intValue() + Integer.valueOf(""+ctr,16).intValue()).toString();					

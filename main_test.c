@@ -1,38 +1,48 @@
-__asm {
-	//Declare label .main
-	.main
-	
-}
 
-
-void helloWorld(char arg1, char arg2, char arg3);
-
+//Global variables
 char arg1 = 'H';
 char arg2 = 'i';
 char arg3 = '!';
 
+//Function prototype
+void helloWorld();
 
-void helloWorld(char arg1, char arg2, char arg3) {
+//Function definition
+void helloWorld() {
 	//output with OUT instruction when its parsed by CompilerV3
 	__asm {
+
+		//IF A == _B
+		LDA _A
+		SUB _B
+		JZ _IF1
+		JMP _ELSE1
+		._IF1:
+		OUT
+		JMP _END1
+		._ELSE1:
+		._END1:
+
 		LDA arg1
 		OUT
 		LDA arg2
 		OUT
 		LDA arg3
 		OUT
+		BX arg1
 	}	
-
-	return;
 }
 
+//Main function
 int main() {
-	//output with OUT instruction when its parsed by CompilerV3
-	//Declare label .main
-	helloWorld(arg1, arg2, arg3);
+	arg1 = arg1 + 1;
+	//Function call
+	helloWorld();
 	
+	//Libre 8 assembly can be embedded in C code
 	__asm {
-		JMP .main
+		JMP __MAIN__
 	}
 	
 }
+
