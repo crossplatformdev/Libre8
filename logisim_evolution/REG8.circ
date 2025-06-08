@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project source="3.8.0" version="1.0">
-  This file is intended to be loaded by Logisim-evolution v3.8.0(https://github.com/logisim-evolution/).
+<project source="4.0.0dev" version="1.0">
+  This file is intended to be loaded by Logisim-evolution v4.0.0dev(https://github.com/logisim-evolution/).
 
   <lib desc="#Wiring" name="0">
     <tool name="Splitter">
@@ -109,11 +109,6 @@
       <a name="incoming" val="8"/>
       <a name="spacing" val="5"/>
     </comp>
-    <comp lib="0" loc="(1080,660)" name="Pin">
-      <a name="appearance" val="classic"/>
-      <a name="facing" val="north"/>
-      <a name="label" val="OP"/>
-    </comp>
     <comp lib="0" loc="(1130,600)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -121,13 +116,13 @@
       <a name="output" val="true"/>
       <a name="width" val="8"/>
     </comp>
-    <comp lib="0" loc="(1140,530)" name="Pin">
+    <comp lib="0" loc="(1190,540)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="SOUT"/>
       <a name="output" val="true"/>
     </comp>
-    <comp lib="0" loc="(270,600)" name="Pin">
+    <comp lib="0" loc="(120,600)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="IN"/>
       <a name="width" val="8"/>
@@ -156,6 +151,11 @@
       <a name="appearance" val="classic"/>
       <a name="facing" val="south"/>
       <a name="label" val="S0"/>
+    </comp>
+    <comp lib="0" loc="(510,230)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="south"/>
+      <a name="label" val="OP"/>
     </comp>
     <comp lib="0" loc="(610,600)" name="Splitter">
       <a name="facing" val="south"/>
@@ -199,16 +199,14 @@
       <a name="length" val="1"/>
     </comp>
     <wire from="(1000,540)" to="(1000,640)"/>
-    <wire from="(1000,540)" to="(1130,540)"/>
+    <wire from="(1000,540)" to="(1190,540)"/>
     <wire from="(1000,700)" to="(1000,720)"/>
     <wire from="(1000,720)" to="(1040,720)"/>
     <wire from="(1040,600)" to="(1040,720)"/>
     <wire from="(1040,600)" to="(1070,600)"/>
-    <wire from="(1080,610)" to="(1080,660)"/>
+    <wire from="(1080,610)" to="(1080,620)"/>
     <wire from="(1090,600)" to="(1130,600)"/>
-    <wire from="(1130,530)" to="(1130,540)"/>
-    <wire from="(1130,530)" to="(1140,530)"/>
-    <wire from="(270,600)" to="(610,600)"/>
+    <wire from="(120,600)" to="(610,600)"/>
     <wire from="(280,230)" to="(280,650)"/>
     <wire from="(280,650)" to="(600,650)"/>
     <wire from="(320,230)" to="(320,590)"/>
@@ -219,6 +217,8 @@
     <wire from="(440,630)" to="(600,630)"/>
     <wire from="(470,230)" to="(470,640)"/>
     <wire from="(470,640)" to="(600,640)"/>
+    <wire from="(510,230)" to="(510,580)"/>
+    <wire from="(510,580)" to="(990,580)"/>
     <wire from="(600,590)" to="(600,610)"/>
     <wire from="(600,590)" to="(660,590)"/>
     <wire from="(600,610)" to="(610,610)"/>
@@ -287,6 +287,8 @@
     <wire from="(960,590)" to="(960,620)"/>
     <wire from="(960,660)" to="(960,670)"/>
     <wire from="(980,640)" to="(990,640)"/>
+    <wire from="(990,580)" to="(990,620)"/>
+    <wire from="(990,620)" to="(1080,620)"/>
     <wire from="(990,640)" to="(1000,640)"/>
     <wire from="(990,640)" to="(990,680)"/>
   </circuit>
