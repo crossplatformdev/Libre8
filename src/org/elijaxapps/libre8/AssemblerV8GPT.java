@@ -126,12 +126,17 @@ public class AssemblerV8GPT {
     }
 
     public static void main(String[] args) throws Exception {
-        run(args);
+        if (args.length == 0) {
+            System.out.println("Usage: java AssemblerV8GPT <filename>");
+            System.out.println("Default filename is 'main.as'");
+            args = new String[]{"main.as"};
+        }
+        run(args[0]);
     }
 
-    public static void run(String[] args) throws Exception {
+    public static void run(String filename) throws Exception {
+        File inputFile = filename.length() == 0 ? new File("main.as") : new File(filename);
         Arrays.fill(mem0, "00");
-        File inputFile = args.length == 0 ? new File("./main.as") : new File(args[0]);
 
         try (BufferedReader br = new BufferedReader(new FileReader(inputFile))) {
             System.out.println("Parsing file...");
@@ -146,7 +151,10 @@ public class AssemblerV8GPT {
 
         compileLines();
         String output = dump();
-        String outputFile = args.length == 0 ? "output/bin.hex" : args[0];
+        String outputFile = "output/bin.hex";
+        if (outputFile.equals(filename)) {
+            outputFile += ".bin";
+        }
         String hexDump = dump();
         PrintWriter out = new PrintWriter(outputFile);
         out.println(hexDump);

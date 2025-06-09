@@ -151,13 +151,17 @@ public class AssemblerV8 {
     private static String clean;
 
     public static void main(String[] args) throws Exception {
-        run(args);
+        if (args.length == 0) {
+            System.out.println("No input file specified. Using default: main.as");
+            args = new String[]{"main.as"};
+        }
+        run(args[0]);
     }
 
-    public static void run(String[] args) throws Exception {
+    public static void run(String filename) throws Exception {
         Arrays.fill(mem0, "00");
 
-        File inputFile = (args.length == 0) ? new File("./main.as") : new File(args[0]);
+        File inputFile = (filename.length() == 0) ? new File("main.as") : new File(filename);
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(inputFile));
@@ -181,7 +185,10 @@ public class AssemblerV8 {
         runCompiler();
         System.out.println("\n\nCompilation complete. Writing binary...");
         String hexDump = dump();
-        String outputFile = (args.length == 0) ? "output/bin.hex" : args[0];
+        String outputFile = "output/bin.hex";
+        if (outputFile.equals(filename)) {
+            outputFile += ".bin";
+        }
         File file = new File(outputFile);
         if (file.exists()) {
             file.delete();

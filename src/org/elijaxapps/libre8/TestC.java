@@ -1,10 +1,13 @@
 package org.elijaxapps.libre8;
 
-public class BASICV8 {
+public class TestC {
+
     public static void main(String[] args) throws Exception {
-        String[] commands = {
-            "TestC.c"
-        };
-        CompilerV8.run(commands);
+        CompilerV8.run(new String[]{
+            "StartHere.c"
+        });
+        AssemblerV8GPT.run(new String[]{
+            "main.as"
+        });
     }
 }

@@ -147,14 +147,22 @@ public class MiniCCompiler {
             dataSection.add(String.format("_%02x %08xh %02x", i, GLYPH_BASE_OFFSET + i, i));
         }
         dataSection.add(";;;;;;;;;;;;;;;\n;; GLYPHS END ;;\n;;;;;;;;;;;;;;;");
-
+        dataSection.add("\n;;;;;;;;;;;;;;;\n;; VARIABLES ;;\n;;;;;;;;;;;;;;;");
         for (Map.Entry<String, Integer> entry : variables.entrySet()) {
             String name = entry.getKey();
             int offset = entry.getValue();
             String val = initialValues.getOrDefault(name, "0");
             dataSection.add(String.format("%s %08xh %s ;; variable initialized", name, offset, val));
         }
-
+        dataSection.add("\n;;;;;;;;;;;;;;;\n;; VARIABLES END ;;\n;;;;;;;;;;;;;;;");
+        dataSection.add("\n;;;;;;;;;;;;;;;\n;; STRINGS ;;\n;;;;;;;;;;;;;;;");
+        for (Map.Entry<String, String> entry : strings.entrySet()) {
+            String name = entry.getKey();
+            String value = entry.getValue();
+            dataSection.add(String.format("%s %08xh \"%s\" ;; string", name, strOffset, value));
+            strOffset -= value.length() + 1; // Adjust offset for next string
+        }
+        dataSection.add("\n;;;;;;;;;;;;;;;\n;; STRINGS END ;;\n;;;;;;;;;;;;;;;");
         dataSection.add("\n;;;;;;;;;;;;;;;\n;; FUNCTIONS ;;\n;;;;;;;;;;;;;;;");
         for (Map.Entry<String, Integer> entry : functions.entrySet()) {
             String fn = entry.getKey();
