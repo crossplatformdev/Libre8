@@ -5,8 +5,9 @@
 *.swp
 .vscode
 .settings
-rogue-3.1
-rogue3.6
 tinycpp-master
 *.as
 *.old
+target/
+src/target/
+_.png.txt

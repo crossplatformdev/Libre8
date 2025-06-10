@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project source="4.0.0dev" version="1.0">
+  This file is intended to be loaded by Logisim-evolution v4.0.0dev(https://github.com/logisim-evolution/).
+
+  <lib desc="#Wiring" name="0">
+    <tool name="Splitter">
+      <a name="facing" val="south"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="4"/>
+    </tool>
+    <tool name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="width" val="8"/>
+    </tool>
+    <tool name="Probe">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+    </tool>
+    <tool name="Tunnel">
+      <a name="facing" val="east"/>
+    </tool>
+    <tool name="Constant">
+      <a name="facing" val="west"/>
+      <a name="value" val="0x0"/>
+      <a name="width" val="8"/>
+    </tool>
+  </lib>
+  <lib desc="#Gates" name="1">
+    <tool name="NOT Gate">
+      <a name="facing" val="north"/>
+    </tool>
+    <tool name="AND Gate">
+      <a name="size" val="30"/>
+    </tool>
+    <tool name="OR Gate">
+      <a name="inputs" val="4"/>
+      <a name="size" val="30"/>
+    </tool>
+  </lib>
+  <lib desc="#Plexers" name="2">
+    <tool name="Multiplexer">
+      <a name="select" val="4"/>
+    </tool>
+  </lib>
+  <lib desc="#Arithmetic" name="3"/>
+  <lib desc="#Memory" name="4">
+    <tool name="D Flip-Flop">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="T Flip-Flop">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="J-K Flip-Flop">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="S-R Flip-Flop">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="Register">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="Counter">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="Shift Register">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="Random">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="RAM">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+    <tool name="ROM">
+      <a name="appearance" val="logisim_evolution"/>
+    </tool>
+  </lib>
+  <lib desc="#I/O" name="5"/>
+  <lib desc="#Base" name="6">
+    <tool name="Text Tool">
+      <a name="font" val="SansSerif plain 12"/>
+    </tool>
+  </lib>
+  <main name="MUX"/>
+  <options>
+    <a name="gateUndefined" val="ignore"/>
+    <a name="simlimit" val="1000"/>
+    <a name="simrand" val="0"/>
+  </options>
+  <mappings>
+    <tool lib="6" map="Button2" name="Menu Tool"/>
+    <tool lib="6" map="Button3" name="Menu Tool"/>
+    <tool lib="6" map="Ctrl Button1" name="Menu Tool"/>
+  </mappings>
+  <toolbar>
+    <tool lib="6" name="Poke Tool"/>
+    <tool lib="6" name="Edit Tool"/>
+    <tool lib="6" name="Text Tool">
+      <a name="font" val="SansSerif plain 12"/>
+    </tool>
+    <sep/>
+    <tool lib="0" name="Pin"/>
+    <tool lib="0" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="output" val="true"/>
+    </tool>
+    <tool lib="1" name="NOT Gate"/>
+    <tool lib="1" name="AND Gate"/>
+    <tool lib="1" name="OR Gate"/>
+  </toolbar>
+  <circuit name="MUX">
+    <a name="circuit" val="MUX"/>
+    <a name="clabel" val="MUX"/>
+    <a name="clabelfont" val="SansSerif plain 12"/>
+    <a name="simulationFrequency" val="4096.0"/>
+    <comp lib="0" loc="(140,690)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="CC"/>
+    </comp>
+    <comp lib="0" loc="(150,620)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="DC"/>
+    </comp>
+    <comp lib="0" loc="(150,730)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="BC"/>
+    </comp>
+    <comp lib="0" loc="(150,790)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="AC"/>
+    </comp>
+    <comp lib="0" loc="(210,300)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="BIN0"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="0" loc="(210,330)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="BIN1"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="0" loc="(210,370)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="BIN2"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="0" loc="(210,420)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="BIN3"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="0" loc="(350,450)" name="Splitter">
+      <a name="facing" val="south"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="4"/>
+    </comp>
+    <comp lib="0" loc="(470,470)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="north"/>
+      <a name="label" val="ALU_O"/>
+    </comp>
+    <comp lib="0" loc="(620,310)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="BOUT"/>
+      <a name="output" val="true"/>
+      <a name="tristate" val="true"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(370,500)" name="OR Gate">
+      <a name="inputs" val="4"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="1" loc="(480,310)" name="Controlled Buffer">
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="2" loc="(380,310)" name="Multiplexer">
+      <a name="disabled" val="Z"/>
+      <a name="enable" val="true"/>
+      <a name="select" val="4"/>
+      <a name="width" val="8"/>
+    </comp>
+    <wire from="(140,690)" to="(200,690)"/>
+    <wire from="(150,620)" to="(180,620)"/>
+    <wire from="(150,730)" to="(220,730)"/>
+    <wire from="(150,790)" to="(240,790)"/>
+    <wire from="(180,480)" to="(180,620)"/>
+    <wire from="(180,480)" to="(340,480)"/>
+    <wire from="(200,490)" to="(200,690)"/>
+    <wire from="(200,490)" to="(340,490)"/>
+    <wire from="(210,300)" to="(300,300)"/>
+    <wire from="(210,330)" to="(310,330)"/>
+    <wire from="(210,370)" to="(320,370)"/>
+    <wire from="(210,420)" to="(330,420)"/>
+    <wire from="(220,510)" to="(220,730)"/>
+    <wire from="(220,510)" to="(340,510)"/>
+    <wire from="(240,520)" to="(240,790)"/>
+    <wire from="(240,520)" to="(340,520)"/>
+    <wire from="(300,240)" to="(300,300)"/>
+    <wire from="(300,240)" to="(340,240)"/>
+    <wire from="(310,250)" to="(310,260)"/>
+    <wire from="(310,250)" to="(340,250)"/>
+    <wire from="(310,260)" to="(310,330)"/>
+    <wire from="(310,260)" to="(340,260)"/>
+    <wire from="(320,270)" to="(320,370)"/>
+    <wire from="(320,270)" to="(340,270)"/>
+    <wire from="(330,310)" to="(330,420)"/>
+    <wire from="(330,310)" to="(340,310)"/>
+    <wire from="(340,480)" to="(360,480)"/>
+    <wire from="(340,490)" to="(370,490)"/>
+    <wire from="(340,510)" to="(380,510)"/>
+    <wire from="(340,520)" to="(390,520)"/>
+    <wire from="(350,390)" to="(350,450)"/>
+    <wire from="(350,390)" to="(360,390)"/>
+    <wire from="(360,470)" to="(360,480)"/>
+    <wire from="(370,390)" to="(490,390)"/>
+    <wire from="(370,470)" to="(370,490)"/>
+    <wire from="(370,500)" to="(490,500)"/>
+    <wire from="(380,310)" to="(460,310)"/>
+    <wire from="(380,470)" to="(380,510)"/>
+    <wire from="(390,470)" to="(390,520)"/>
+    <wire from="(470,320)" to="(490,320)"/>
+    <wire from="(480,310)" to="(620,310)"/>
+    <wire from="(490,320)" to="(490,390)"/>
+    <wire from="(490,390)" to="(490,500)"/>
+  </circuit>
+</project>
