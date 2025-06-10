@@ -1,4 +1,4 @@
-# Libre-8
+# #Libre8
 An 8 bit OpenSource full computer
 
 This is <b>Libre 8</b>, an <b>8 bit OpenSource computer.</b> 
