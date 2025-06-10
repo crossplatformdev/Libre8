@@ -31,9 +31,13 @@ Currently must be programmed using Assembly like operations.
 | OUTB | Same as OUTA with B register |
 | OUTC | Same as OUTA with C register |
 | OUTD | Same as OUTA with D register |
-| DEC |Reads a byte from keyboard and stores in A register                                                            | DEC <br/> STA readChar |
-| ADD |Adds the value of the following address or variable to the contents of register A                              | DEC <br/> ADD one     |	
-| SUB |Substracts the value of the following address or variable to the contents of register A                        | DEC <br/> ADD one     |	
+| DEC |Reads a byte from keyboard and stores in A register. Blocks execution.                                                            | DEC <br/> STA readChar |
+| DECE |Reads a byte from keyboard, echoes it, and stores in A register. Blocks executtion.                                                            | DEC <br/> STA readChar |
+| DECI |Reads a byte from keyboard, echoes it, and stores in A register. Non-blocking                                                            | DEC <br/> STA readChar |
+| ADD |Adds the value of the following address or variable to the contents of register A                              | DEC <br/> ADD _01     |	
+| SUB |Substracts the value of the following address or variable to the contents of register A                        | DEC <br/> SUB _01     |	
+| DIV |Divides the value of the following address or variable to the contents of register A                        | LDA _10 <br /> DIV _02 ;; 5 hex    |	
+| MUL |Divides the value of the following address or variable to the contents of register A                        | LDA _10 <br /> MUL _02 ;; 20 hex     |	
 | JZ  |Jumps to the specified address or to specified address contained within a variable if Zero Flag == 0           | JZ addressToJumpTo, JZ 0000ffh    |
 | JNZ |Jumps to the specified address or to specified address contained within a variable if Zero Flag != 0           | JNZ addressToJumpTo, JNZ 0000ffh  |
 | JC  |Jumps to the specified address or to specified address contained within a variable if Carry Flag == 0          | JC addressToJumpTo,  JC 0000ffh   |
@@ -48,6 +52,15 @@ Currently must be programmed using Assembly like operations.
 | NOP | No operation. Just reads the next operation                                           | NOP                                |
 | HLT | Halts the computer                                                                    | HLT                                |
 | MOV | Limited, not documented support for some MOV operations. SEE THE CODE!!!              | MOV A, C                           |
+| POKE| Render a row of 72 pixels in GPU screen. Requires 144 chars [0-9A-F] as argument.     | POKE 0f0a...<<144>>                |
+| POKX| Set X coordinate on GPU. Is a direct instruction, followed by a byte.                 | POKX 42                            |
+| POKY| Set Y coordinate on GPU. Is a direct instruction, followed by a byte.                 | POKY 42                            |
+| PXYD| Set pixel on X,Y coordinates, of the colour of the next byte. Is a direct instruction, followed by a byte.                 | POKD 42                            |
+| PIKX| Set X coordinate on GPU. Is a Indirect instruction, followed by a byte.                 | PIKX var1                            |
+| PIKY| Set Y coordinate on GPU. Is a Indirect instruction, followed by a byte.                 | PIKY var1                            |
+| PIYD| Set pixel on X,Y coordinates, of the colour of the next byte. Is a Indirect instruction, followed by a byte.                 | PIYD var1                            |
+
+
 
 # Example program:
 ```
