@@ -40,11 +40,12 @@
       <a name="incoming" val="32"/>
     </tool>
     <tool name="Pin">
+      <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="output" val="true"/>
       <a name="width" val="8"/>
     </tool>
     <tool name="Probe">
+      <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
     </tool>
     <tool name="Tunnel">
@@ -86,7 +87,7 @@
     <tool lib="0" name="Pin"/>
     <tool lib="0" name="Pin">
       <a name="facing" val="west"/>
-      <a name="output" val="true"/>
+      <a name="type" val="output"/>
     </tool>
     <sep/>
     <tool lib="1" name="NOT Gate"/>
@@ -105,51 +106,65 @@
     <a name="clabel" val="MAR"/>
     <a name="simulationFrequency" val="4096.0"/>
     <comp lib="0" loc="(170,150)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="BIN1"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(170,230)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="BIN2"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(170,310)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="BIN3"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(170,390)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="BIN4"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(200,70)" name="Pin">
+      <a name="appearance" val="classic"/>
       <a name="facing" val="south"/>
       <a name="label" val="CLK"/>
     </comp>
     <comp lib="0" loc="(230,70)" name="Pin">
+      <a name="appearance" val="classic"/>
       <a name="facing" val="south"/>
       <a name="label" val="MI"/>
     </comp>
     <comp lib="0" loc="(360,150)" name="Pin">
+      <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="BOUT1"/>
-      <a name="output" val="true"/>
+      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(360,230)" name="Pin">
+      <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="BOUT2"/>
-      <a name="output" val="true"/>
+      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(360,310)" name="Pin">
+      <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="BOUT3"/>
-      <a name="output" val="true"/>
+      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(360,390)" name="Pin">
+      <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="BOUT4"/>
-      <a name="output" val="true"/>
+      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(360,450)" name="Constant">

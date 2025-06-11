@@ -7,6 +7,6 @@ public class Pong {
             "PongGPT.c"
         };
         MiniCCompiler.run("PongGPT.c");
-
+        AssemblerV8.run("PongGPT.as");
     }
 }

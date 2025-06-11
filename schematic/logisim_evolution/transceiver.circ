@@ -103,7 +103,7 @@
     <tool lib="0" name="Pin"/>
     <tool lib="0" name="Pin">
       <a name="facing" val="west"/>
-      <a name="output" val="true"/>
+      <a name="type" val="output"/>
     </tool>
     <tool lib="1" name="NOT Gate"/>
     <tool lib="1" name="AND Gate"/>
@@ -132,21 +132,25 @@
     </comp>
     <comp lib="0" loc="(210,300)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="BIN0"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(210,330)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="BIN1"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(210,370)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="BIN2"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(210,420)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="BIN3"/>
       <a name="width" val="8"/>
     </comp>
@@ -164,8 +168,7 @@
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="BOUT"/>
-      <a name="output" val="true"/>
-      <a name="tristate" val="true"/>
+      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="1" loc="(370,500)" name="OR Gate">

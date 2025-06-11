@@ -95,7 +95,7 @@
     <tool lib="0" name="Pin"/>
     <tool lib="0" name="Pin">
       <a name="facing" val="west"/>
-      <a name="output" val="true"/>
+      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </tool>
     <tool lib="1" name="NOT Gate"/>
@@ -130,11 +130,12 @@
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="BUSO"/>
-      <a name="output" val="true"/>
+      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </comp>
     <comp lib="0" loc="(200,410)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="DATA"/>
       <a name="width" val="8"/>
     </comp>
@@ -145,6 +146,7 @@
     </comp>
     <comp lib="0" loc="(210,90)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="label" val="COUNTER_IN"/>
       <a name="width" val="8"/>
     </comp>
