@@ -86,6 +86,7 @@
     </comp>
     <comp lib="0" loc="(450,480)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="CLK"/>
     </comp>
@@ -95,6 +96,7 @@
     </comp>
     <comp lib="0" loc="(670,220)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="PCCLR"/>
     </comp>

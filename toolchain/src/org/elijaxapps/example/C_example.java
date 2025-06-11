@@ -1,4 +1,6 @@
-package org.elijaxapps.libre8;
+package org.elijaxapps.example;
+
+import org.elijaxapps.old.CompilerV8;
 
 public class C_example {
     public static void main(String[] args) throws Exception {

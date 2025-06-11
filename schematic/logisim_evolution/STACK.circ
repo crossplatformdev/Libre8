@@ -115,11 +115,13 @@
     <a name="simulationFrequency" val="4096.0"/>
     <comp lib="0" loc="(10,140)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="west"/>
       <a name="label" val="CPP"/>
     </comp>
     <comp lib="0" loc="(10,160)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="west"/>
       <a name="label" val="CMM"/>
     </comp>
@@ -152,11 +154,13 @@
     </comp>
     <comp lib="0" loc="(280,760)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="LRS"/>
     </comp>
     <comp lib="0" loc="(320,760)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="LR2"/>
     </comp>
@@ -168,11 +172,13 @@
     <comp lib="0" loc="(350,110)" name="Ground"/>
     <comp lib="0" loc="(360,760)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="LR0"/>
     </comp>
     <comp lib="0" loc="(400,760)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="LRW"/>
     </comp>

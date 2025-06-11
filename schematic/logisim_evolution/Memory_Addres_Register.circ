@@ -131,11 +131,13 @@
     </comp>
     <comp lib="0" loc="(200,70)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="CLK"/>
     </comp>
     <comp lib="0" loc="(230,70)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="MI"/>
     </comp>

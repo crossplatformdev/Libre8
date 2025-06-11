@@ -115,6 +115,7 @@
     <a name="simulationFrequency" val="4096.0"/>
     <comp lib="0" loc="(100,980)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="DIVIDE"/>
     </comp>
@@ -173,21 +174,25 @@
     </comp>
     <comp lib="0" loc="(170,980)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="SUBSTRACT"/>
     </comp>
     <comp lib="0" loc="(250,980)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="SUM"/>
     </comp>
     <comp lib="0" loc="(280,980)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="O"/>
     </comp>
     <comp lib="0" loc="(30,980)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="ANDOR"/>
     </comp>
@@ -217,6 +222,7 @@
     </comp>
     <comp lib="0" loc="(540,280)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="D0"/>
     </comp>
@@ -227,16 +233,19 @@
     </comp>
     <comp lib="0" loc="(560,280)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="C0"/>
     </comp>
     <comp lib="0" loc="(580,280)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="B0"/>
     </comp>
     <comp lib="0" loc="(600,280)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="north"/>
       <a name="label" val="A0"/>
     </comp>

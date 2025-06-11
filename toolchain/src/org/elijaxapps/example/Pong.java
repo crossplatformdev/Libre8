@@ -1,4 +1,7 @@
-package org.elijaxapps.libre8;
+package org.elijaxapps.example;
+
+import org.elijaxapps.libre8.AssemblerV8;
+import org.elijaxapps.libre8.MiniCCompiler;
 
 public class Pong {
 

@@ -129,31 +129,37 @@
     </comp>
     <comp lib="0" loc="(280,230)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="CLK"/>
     </comp>
     <comp lib="0" loc="(320,230)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="LDL"/>
     </comp>
     <comp lib="0" loc="(380,230)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="CLL"/>
     </comp>
     <comp lib="0" loc="(440,230)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="SIN"/>
     </comp>
     <comp lib="0" loc="(470,230)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="S0"/>
     </comp>
     <comp lib="0" loc="(510,230)" name="Pin">
       <a name="appearance" val="classic"/>
+      <a name="behavior" val="pulldown"/>
       <a name="facing" val="south"/>
       <a name="label" val="OP"/>
     </comp>
