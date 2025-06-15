@@ -268,9 +268,12 @@ _ff 000011feh ff
 ;;;;;;;;;;;;;;;
 ;; VARIABLES ;;
 ;;;;;;;;;;;;;;;
-a 001f0000h 28 ;; variable initialized
-b 001effffh 2 ;; variable initialized
-result 001efffeh 0 ;; variable initialized
+dividend 001f0000h 2a ;; variable initialized
+divisor 001effffh 0 ;; variable initialized
+quotient 001efffeh 0 ;; variable initialized
+e 001efffdh 65 ;; variable initialized
+r 001efffch 72 ;; variable initialized
+o 001efffbh 6f ;; variable initialized
 
 ;;;;;;;;;;;;;;;
 ;; VARIABLES END ;;
@@ -287,7 +290,8 @@ result 001efffeh 0 ;; variable initialized
 ;;;;;;;;;;;;;;;
 ;; FUNCTIONS ;;
 ;;;;;;;;;;;;;;;
-main 006f0000h ;; function offset
+error 006f0000h ;; function offset
+main 006ec000h ;; function offset
 
 ;;;;;;;;;;;;;;;
 ;; DATA END ;;
@@ -300,13 +304,31 @@ main 006f0000h ;; function offset
 B main ;; Branch to main function
 
 ;;;;;;;;;;;;;;;
+;; BEGIN error ;;
+.error
+LDA e   // Load the address of the e letter into the accumulator
+OUT // Output the letter 'e' to the console ;; Output var
+LDA r   // Load the address of the r letter into the accumulator
+OUT // Output the letter 'r' to the console ;; Output var
+LDA r   // Load the address of the r letter into the accumulator
+OUT // Output the letter 'r' to the console ;; Output var
+LDA o   // Load the address of the o letter into the accumulator
+OUT // Output the letter 'o' to the console ;; Output var
+LDA r   // Load the address of the r letter into the accumulator
+OUT // Output the letter 'r' to the console ;; Output var
+HLT // Halt the program
+BX _00 ;; Return from function
+;;;;;;;;;;;;;;;
+;; END error ;;
+;;;;;;;;;;;;;;;
 ;; BEGIN main ;;
 .main
-LDA a
-ADD b
-STA result
-LDA result  // Load the value of 'result' into the accumulator
-OUT result ;; Output var
+LDA divisor     // Load the value of 'divisor' into the accumulator
+SUB _01         // Subtract 1 from the accumulator
+JC error        // Jump to error if divisor is zero (if there's an underflow and Carry Flag is set)
+LDA dividend    // Load the value of 'dividend' into the accumulator
+DIV divisor     // Divide 'dividend' by 'divisor'
+OUT quotient    // Output the result to the console ;; Output var
 BX _00 ;; Return from main
 ;;;;;;;;;;;;;;;
 ;; END main ;;
