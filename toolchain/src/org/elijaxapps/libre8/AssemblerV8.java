@@ -49,81 +49,82 @@ public class AssemblerV8 {
     private static final long MOV_REG_BP = 0x03;
 
     // ALU Instructions
-    private static long STA = 0x5a;
-    private static long STB = 0x5b;
-    private static long STC = 0x5c;
-    private static long STD = 0x5d;
-    private static long ADD = 0xaa;
-    private static long SUB = 0xa5;
-    private static long MUL = 0xa2;
-    private static long DIV = 0xad;
-    private static long DEC = 0xde;
-    private static long DECE = 0xdf;
+    private static final long STA = 0x5a;
+    private static final long STB = 0x5b;
+    private static final long STC = 0x5c;
+    private static final long STD = 0x5d;
+    private static final long ADD = 0xaa;
+    private static final long SUB = 0xa5;
+    private static final long MUL = 0xa2;
+    private static final long DIV = 0xad;
+    private static final long DEC = 0xde;
+    private static final long DECE = 0xdf;
     private static final long DECI = 0xd1;
 
-    private static long IADD = 0x6a;
-    private static long ISUB = 0x65;
-    private static long IMUL = 0x62;
-    private static long IDIV = 0x6d;
+    private static final long IADD = 0x6a;
+    private static final long ISUB = 0x65;
+    private static final long IMUL = 0x62;
+    private static final long IDIV = 0x6d;
 
     // I/O Instructions
-    private static long POKE = 0x99;
+    private static final long POKE = 0x99;
     private static final long POKX = 0x9a;
     private static final long POKY = 0x9b;
     private static final long PXYD = 0x9c;
     private static final long PIKX = 0x9d;
     private static final long PIKY = 0x9e;
     private static final long PIYD = 0x9f;
-    private static long OUTA = 0x05;
-    private static long OUTB = 0x06;
-    private static long OUTC = 0x07;
-    private static long OUTD = 0x08;
+    private static final long OUTA = 0x05;
+    private static final long OUTB = 0x06;
+    private static final long OUTC = 0x07;
+    private static final long OUTD = 0x08;
 
     // Stack and Pointer Operations
-    private static long PSAX = 0xc1;
-    private static long PSAH = 0xc2;
-    private static long PSAL = 0xc3;
-    private static long POPX = 0xc4;
-    private static long POPH = 0xc5;
-    private static long POPL = 0xc6;
+    private static final long PSAX = 0xc1;
+    private static final long PSAH = 0xc2;
+    private static final long PSAL = 0xc3;
+    private static final long POPX = 0xc4;
+    private static final long POPH = 0xc5;
+    private static final long POPL = 0xc6;
 
     // Miscellaneous
-    private static long LDI = 0xde;
-    private static long HLT = 0x91;
-    private static long STO = 0x86;
-    private static long NOP = 0x11;
+    private static final long LDI = 0xde;
+    private static final long HLT = 0x91;
+    private static final long STO = 0x86;
+    private static final long NOP = 0x11;
 
     // Jump and Branch
-    private static long JMP = 0xe1;
-    private static long JZ = 0xe2;
-    private static long JC = 0xe3;
-    private static long JNZ = 0xe4;
-    private static long JNC = 0xe5;
-    private static long JNB = 0xe6;
-    private static long JB = 0xe7;
-    private static long JP = 0xe8;
-    private static long JNP = 0xe9;
+    private static final long JMP = 0xe1;
+    private static final long JZ = 0xe2;
+    private static final long JC = 0xe3;
+    private static final long JNZ = 0xe4;
+    private static final long JNC = 0xe5;
+    private static final long JNB = 0xe6;
+    private static final long JB = 0xe7;
+    private static final long JP = 0xe8;
+    private static final long JNP = 0xe9;
 
-    private static long B = 0x80;
-    private static long BC = 0x81;
-    private static long BNC = 0x82;
-    private static long BZ = 0x83;
-    private static long BNZ = 0x84;
-    private static long BNB = 0x85;
-    private static long BP = 0x86;
-    private static long BNP = 0x87;
-    private static long BB = 0x88;
-    private static long BX = 0x89;
+    private static final long B = 0x80;
+    private static final long BC = 0x81;
+    private static final long BNC = 0x82;
+    private static final long BZ = 0x83;
+    private static final long BNZ = 0x84;
+    private static final long BNB = 0x85;
+    private static final long BP = 0x86;
+    private static final long BNP = 0x87;
+    private static final long BB = 0x88;
+    private static final long BX = 0x89;
 
-    private static long RST = 0x77;
-    private static long PST = 0x78;
+    
+    private static final long RST = 0x77;
+    private static final long PST = 0x78;
 
-    private static long PTRI = 0x79;
-    private static long PTRD = 0x7a;
-    private static long PTRL = 0x7b;
-    private static long PTRS = 0x7c;
+    private static final long PTRI = 0x79;
+    private static final long PTRD = 0x7a;
+    private static final long PTRL = 0x7b;
+    private static final long PTRS = 0x7c;
 
-    private static long LDR = 0xaa;
+    private static final long LDR = 0xaa;
 
     // Memory Constants
     public static final int WORD_SIZE = 16;

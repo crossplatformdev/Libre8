@@ -1,6 +1,9 @@
 package org.elijaxapps.libre8;
 
-import java.io.PrintWriter;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class MicroCodeV8 {
 
@@ -135,8 +138,10 @@ public class MicroCodeV8 {
         System.out.println("Formatted!");
         // trainASCII();
         int ccount = 0;
+        Long max = (Signals.PARITY_FLAG1 + Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1
+                + Signals.LESSER_FLAG1 + Signals.GREATER_FLAG1 + Signals.EQUAL_FLAG1);
         for (icuadrant = 0;
-                icuadrant <= (Signals.GREATER_FLAG1 * 2); icuadrant += Signals.PARITY_FLAG1) {
+                icuadrant <= (max); icuadrant += Signals.PARITY_FLAG1) {
             // Stack operations. Store 24b addres on LRS Stack
             System.out.println("Cuadrant count: " + ccount + " | Cuadrant: " + icuadrant);
             ccount += 1;
@@ -159,18 +164,15 @@ public class MicroCodeV8 {
             createLDI(icuadrant, LDIC, Signals.MEMC);
             createLDI(icuadrant, LDID, Signals.MEMD);
 
-            createArithmetic(icuadrant, ADD, Signals.RO + Signals.MEMB,
-                    Signals.SUM + Signals.FI);
-            createArithmetic(icuadrant, SUB, Signals.RO + Signals.MEMB,
-                    Signals.SUM + Signals.ALU_SUB + Signals.FI);
+            createArithmetic(icuadrant, ADD, Signals.RO + Signals.MEMB, Signals.SUM, Signals.AMEM);
+            createArithmetic(icuadrant, SUB, Signals.RO + Signals.MEMB, Signals.SUB, Signals.AMEM);
+            createArithmetic(icuadrant, MUL, Signals.RO + Signals.MEMB, Signals.MUL, Signals.AMEM);
+            createArithmetic(icuadrant, DIV, Signals.RO + Signals.MEMB, Signals.DIV, Signals.AMEM);
 
-            createArithmetic(icuadrant, MUL, Signals.RO + Signals.MEMB,
-                    Signals.SUM + Signals.ALU_DIV + Signals.FI);
-            createArithmetic(icuadrant, DIV, Signals.RO + Signals.MEMB,
-                    Signals.SUM + Signals.ALU_DIV + Signals.ALU_SUB + Signals.FI);
-
-            createIArithmetic(icuadrant, IADD, Signals.SUM);
-            createIArithmetic(icuadrant, ISUB, Signals.SUM + Signals.ALU_SUB);
+            createIArithmetic(icuadrant, IADD, Signals.SUM, Signals.AMEM);
+            createIArithmetic(icuadrant, ISUB, Signals.SUB, Signals.AMEM);
+            createIArithmetic(icuadrant, IDIV, Signals.DIV, Signals.AMEM);
+            createIArithmetic(icuadrant, IMUL, Signals.MUL, Signals.AMEM);
 
             createOUTput(icuadrant, OUTA, Signals.AMEM);
             createOUTput(icuadrant, OUTB, Signals.BMEM);
@@ -181,57 +183,106 @@ public class MicroCodeV8 {
             createINput(icuadrant, DECE, true);
 
             jump(icuadrant, JMP);
-
-            jump(icuadrant, JNZ);
-            notJump(icuadrant, JNC);
-            jump(icuadrant, JNB);
-            notJump(icuadrant, JNP);
-
-            notJump(icuadrant, JC);
-            notJump(icuadrant, JZ);
-            notJump(icuadrant, JP);
-            notJump(icuadrant, JB);
-
             createBX(icuadrant, BX);
-
             call(icuadrant, B);
 
-            call(icuadrant, BNZ);
-            call(icuadrant, BNC);
-            call(icuadrant, BNB);
-            call(icuadrant, BNP);
-
-            call(icuadrant, BC);
-            call(icuadrant, BZ);
-            call(icuadrant, BP);
-            call(icuadrant, BB);
-
-            if ((icuadrant % Signals.CARRY_FLAG1) == 0) {
-                notCall(icuadrant, BNC);
-                call(icuadrant, BC);
-                notJump(icuadrant, JNC);
-                jump(icuadrant, JC);
-            }
-
-            if ((icuadrant % Signals.ZERO_FLAG1) == 0) {
-                notCall(icuadrant, BNZ);
-                call(icuadrant, BZ);
-                notJump(icuadrant, JNZ);
-                jump(icuadrant, JZ);
-            }
-
-            if ((icuadrant % Signals.BORROW_FLAG1) == 0) {
-                call(icuadrant, BB);
-                notCall(icuadrant, BNB);
-                jump(icuadrant, JB);
-                notJump(icuadrant, JNB);
-            }
-
-            if ((icuadrant % Signals.PARITY_FLAG1) == 0) {
+            if ((icuadrant % Signals.PARITY_FLAG1) == Signals.PARITY_FLAG0 && icuadrant >= Signals.PARITY_FLAG1) {
                 call(icuadrant, BP);
                 notCall(icuadrant, BNP);
                 jump(icuadrant, JP);
                 notJump(icuadrant, JNP);
+                /*
+                    jump(icuadrant, JNZ);
+                    jump(icuadrant, JNC);
+                    jump(icuadrant, JNB);
+                    notJump(icuadrant, JC);
+                    notJump(icuadrant, JZ);
+                    notJump(icuadrant, JB);
+                    call(icuadrant, BNZ);
+                    call(icuadrant, BNC);
+                    call(icuadrant, BNB);
+                    notCall(icuadrant, BC);
+                    notCall(icuadrant, BZ);
+                    notCall(icuadrant, BB);
+                 */
+            } else {
+                notCall(icuadrant, BP);
+                call(icuadrant, BNP);
+                notJump(icuadrant, JP);
+                jump(icuadrant, JNP);
+            }
+
+            if (icuadrant>= Signals.BORROW_FLAG1 && (
+                (icuadrant % (Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
+
+                
+                (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1)) == Signals.PARITY_FLAG0 ||                
+                (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||                
+                
+                (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+            )) {
+                call(icuadrant, BB);
+                notCall(icuadrant, BNB);
+                jump(icuadrant, JB);
+                notJump(icuadrant, JNB);
+            } else {
+                notCall(icuadrant, BB);
+                call(icuadrant, BNB);
+                notJump(icuadrant, JB);
+                jump(icuadrant, JNB);
+            }
+
+            if (icuadrant >= Signals.ZERO_FLAG1 && (
+                (icuadrant % (Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
+                
+                (icuadrant % (Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
+
+
+                (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0                 
+
+            )) {    
+                notCall(icuadrant, BNZ);
+                call(icuadrant, BZ);
+                notJump(icuadrant, JNZ);
+                jump(icuadrant, JZ);
+            } else {
+                call(icuadrant, BNZ);
+                notCall(icuadrant, BZ);
+                jump(icuadrant, JNZ);
+                notJump(icuadrant, JZ);
+            }
+
+            if (icuadrant >= Signals.CARRY_FLAG1 && (
+                (icuadrant % Signals.CARRY_FLAG1) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
+                
+                (icuadrant % (Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
+
+                (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
+                (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+            )) {
+                notCall(icuadrant, BNC);
+                call(icuadrant, BC);
+                notJump(icuadrant, JNC);
+                jump(icuadrant, JC);
+            } else {
+                call(icuadrant, BNC);
+                notCall(icuadrant, BC);
+                jump(icuadrant, JNC);
+                notJump(icuadrant, JC);            
             }
 
             createMOVtoMem(icuadrant, MOV_AMem, Signals.AMEM);
@@ -276,15 +327,7 @@ public class MicroCodeV8 {
 
         }
 
-        String str = dump();
-
-        try (PrintWriter out = new PrintWriter("./output/microcode.hex")) {
-            out.println(str);
-            out.close();
-            System.out.println("Success generating microcode.hex");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        saveToFile("./output/microcode.hex", dump());
 
     }
 
@@ -680,14 +723,15 @@ public class MicroCodeV8 {
         write(Signals.clpcr);
     }
 
-    private static void createIArithmetic(long icuadrant, long instruction, long d) throws Exception {
+    private static void createIArithmetic(long icuadrant, long instruction, long d, long e) throws Exception {
         setOffset(instruction, icuadrant);
         fetch();
 
         // bit24Indirection(true, true, true, operation1, operation2);
         readOneNotWrite();
         write(Signals.RO + Signals.MEMB);
-        write(Signals.FI + Signals.ALU_EOUT + d);
+        write(Signals.FI + d);
+        write(e);
         write(Signals.clpcr);
     }
 
@@ -851,21 +895,18 @@ public class MicroCodeV8 {
 
     private static void format() throws Exception {
         long total = TOTAL_CELLS;
-        for (int pp = 0; pp < 2; pp++) {
-            k = 0;
-            i = 0;
-            System.out.println("Phase " + pp);
-            for (int ii = 0; ii < total; ii++) {
-                clear(ii);
+        k = 0;
+        i = 0;
+        for (int ii = 0; ii < total; ii += 2) {
+            clear(ii);
 
 //				} else {
 //					memory[ii] = Long.toHexString(ii) + " ";
 //				}
-                /*
+            /*
 				 * if(ii % 0x1000 == 0) { if (ii % 120 != 0) { System.out.print("."); } else {
 				 * System.out.print("\n"); } }
-                 */
-            }
+             */
         }
 
         k = 0;
@@ -873,6 +914,18 @@ public class MicroCodeV8 {
 
         System.out.print("\n");
 
+    }
+
+    private static void saveToFile(String filename, String content) throws IOException {
+        File file = new File(filename);
+        if (file.exists()) {
+            file.delete();
+        }
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        writer.write(content);
+        writer.close();
+
+        System.out.println("Firmware code saved to " + filename);
     }
 
     private static class Signals {
@@ -946,27 +999,31 @@ public class MicroCodeV8 {
         private static final long ANDOR = 0b1_0000_0000_0000_0000_0000_0000_0000_0000_000L; // 39 // AND OR
 
         private static final long PARITY_FLAG0 = 0b0_0000;
-        private static final long PARITY_FLAG1 = 0b1_0000_0000_0000_0000L;
+        private static final long PARITY_FLAG1 = 0b10000000000000000L;
         private static final long BORROW_FLAG0 = 0b00000;
-        private static final long BORROW_FLAG1 = 0b10_0000_0000_0000_0000L;
-        private static final long ZERO_FLAG0 = 0b0_0000;
-        private static final long ZERO_FLAG1 = 0b100_0000_0000_0000_0000L;
-        private static final long CARRY_FLAG0 = 0b0_0000;
-        private static final long CARRY_FLAG1 = 0b1000_0000_0000_0000_0000L;
+        private static final long BORROW_FLAG1 = 0b100000000000000000L;
+        private static final long ZERO_FLAG0 = 0b00000;
+        private static final long ZERO_FLAG1 = 0b1000000000000000000L;
+        private static final long CARRY_FLAG0 = 0b00000;
+        private static final long CARRY_FLAG1 = 0b10000000000000000000L;
 
-        private static final long LESSER_FLAG0 = 0b0_0000;
-        private static final long LESSER_FLAG1 = 0b1_0000_0000_0000_0000_0000L;
+        private static final long LESSER_FLAG0 = 0b00000;
+        private static final long LESSER_FLAG1 = 0b100000000000000000000L;
 
-        private static final long EQUAL_FLAG0 = 0b0_0000;
-        private static final long EQUAL_FLAG1 = 0b10_0000_0000_0000_0000_0000L;
+        private static final long EQUAL_FLAG0 = 0b00000;
+        private static final long EQUAL_FLAG1 = 0b1000000000000000000000L;
 
-        private static final long GREATER_FLAG0 = 0b0_0000;
-        private static final long GREATER_FLAG1 = 0b100_0000_0000_0000_0000_0000L;
+        private static final long GREATER_FLAG0 = 0b00000;
+        private static final long GREATER_FLAG1 = 0b10000000000000000000000L;
 
         private static final long IDLE = 0; // 0
         private static final long BMEM = REG_B + Signals.O0; // 1
         private static final long BTOA = REG_B + REG_A + Signals.LD + Signals.O0; // 2
-        private static final long SUM = BTOA + Signals.ALU_EOUT; // 3
+
+        private static final long SUM = BTOA + Signals.FI + Signals.ALU_EOUT; // 3
+        private static final long SUB = BTOA + Signals.FI + Signals.ALU_SUB; // 4
+        private static final long DIV = BTOA + Signals.FI + Signals.ALU_DIV; // 5
+        private static final long MUL = BTOA + Signals.FI + Signals.ALU_DIV + Signals.ALU_EOUT; // 6
 
         private static final long AMEM = 0 + REG_A + 0 + 0 + Signals.O0; // 4
         private static final long ATOB = 0 + REG_A + 0 + 0 + Signals.O0 + REG_B; // 5

@@ -25,6 +25,11 @@ public class MiniCCompiler {
     private static int strOffset = BASE_STR_OFFSET;
     private static int funcOffset = BASE_FUNC_OFFSET;
 
+    private static int labelCounter = 0;
+    private static final List<String> breakStack = new ArrayList<>();
+    private static final List<String> continueStack = new ArrayList<>();
+    private static final ArrayList<String> blockEndLabel = new ArrayList<>();
+
     private static final List<String> dataSection = new ArrayList<>();
     private static final List<String> codeSection = new ArrayList<>();
 
@@ -33,8 +38,11 @@ public class MiniCCompiler {
     private static final Map<String, String> strings = new LinkedHashMap<>();
     private static final Map<String, Integer> functions = new LinkedHashMap<>();
     private static final Map<String, List<String>> functionBodies = new LinkedHashMap<>();
+    private static final Map<String, List<String>> ifBodies = new LinkedHashMap<>();
     private static final Map<String, List<String>> functionArgs = new LinkedHashMap<>();
 
+    private static boolean noIfElse = false; // Flag to skip if-else parsing
+    private static final Map<String, List<String>> conditions = new LinkedHashMap<>();
     public static void main(String[] args) throws IOException {
         String input = readFile("C_example.c");
         parseGlobals(input);
@@ -136,6 +144,7 @@ public class MiniCCompiler {
             functionArgs.put(name, argList);
             functionBodies.put(name, Arrays.asList(body.trim().split("\\n")));
             functions.put(name, funcOffset);
+            dataSection.add(name + " " + String.format("%08xh", funcOffset) + " ;; Function offset");
             funcOffset -= 0x4000;
         }
     }
@@ -173,81 +182,379 @@ public class MiniCCompiler {
     }
 
     private static void generateCodeSection() {
-        codeSection.add(";;;;;;;;;;;;;;;\n;; CODE BEGIN ;;\n;;;;;;;;;;;;;;;\n.code\nB main ;; Branch to main function\n");
+        codeSection.add(";;;;;;;;;;;;;;;\n"
+                + ";; CODE BEGIN ;;\n"
+                + ";;;;;;;;;;;;;;;\n"
+                + ".code\n"
+                + "B main ;; Branch to main function"
+                + "\n");
 
-        for (Map.Entry<String, List<String>> fn : functionBodies.entrySet()) {
-            String name = fn.getKey();
-            List<String> body = fn.getValue();
-            codeSection.add(";;;;;;;;;;;;;;;\n;; BEGIN " + name + " ;;");
-            codeSection.add("." + name);
+        while (functionBodies.size() > 0) {
+            Map.Entry<String, List<String>> entry = functionBodies.entrySet().iterator().next();
+            generateCode(entry);
+            functionBodies.remove(entry.getKey());
+        }
 
+        for (Map.Entry<String, List<String>> fn : ifBodies.entrySet()) {
+            String[] parts = fn.getKey().split("\\+\\+\\+");
+            String ifLabel = parts[0];
+            String elseLabel = parts.length > 1 ? parts[1] : "ELSE_" + labelCounter++;
+            codeSection.add(";; If-Else block: " + ifLabel + " else " + elseLabel);
+            String condition = fn.getValue().toString().replace("[", "").replace("]", "").trim();
+            generateConditionalBody(condition, ifLabel, elseLabel);
+        }
+
+    }
+
+    public static void generateCode(Map.Entry<String, List<String>> fn) {
+        String name = fn.getKey();
+        List<String> body = fn.getValue();
+        codeSection.add(";;;;;;;;;;;;;;;\n;; BEGIN " + name + " ;;");
+        codeSection.add("." + name);
+
+        if (!functionArgs.isEmpty()) {
             for (String arg : functionArgs.get(name)) {
                 codeSection.add(";; Argument: " + arg);
             }
-
-            for (String line : body) {
-                String trim = line.trim();
-                if (trim.isEmpty() || trim.startsWith("__asm") || trim.startsWith(";;")) {
-                    continue;
-                }
-
-                if (trim.contains("BX")) {
-                    codeSection.add("BX _00 ;; Return from function");
-                } else if (trim.contains("POP")) {
-                    codeSection.add("POPX " + functionArgs.get(name).get(0) + " ;; Pop the argument from the stack");
-                } else if (trim.startsWith("OUT ")) {
-                    String arg = trim.substring(4).trim();
-                    codeSection.add("OUT " + arg + " ;; Output var");
-                } else if (trim.equals("OUTA") || trim.equals("OUTB") || trim.equals("OUTC") || trim.equals("OUTD")
-                        || trim.equals("DEC") || trim.equals("DECE") || trim.equals("HLT") || trim.equals("NOP")
-                        || trim.equals("RST") || trim.equals("PST") || trim.equals("PTRI") || trim.equals("PTRD")
-                        || trim.equals("PTRL") || trim.equals("PTRS")) {
-                    codeSection.add(trim + " ;; Inline mnemonic");
-                } else if (trim.startsWith("LDA") || trim.startsWith("LDB") || trim.startsWith("LDC") || trim.startsWith("LDD")
-                        || trim.startsWith("LDIA") || trim.startsWith("LDIB") || trim.startsWith("LDIC") || trim.startsWith("LDID")
-                        || trim.startsWith("STA") || trim.startsWith("STB") || trim.startsWith("STC") || trim.startsWith("STD")
-                        || trim.startsWith("ADD") || trim.startsWith("SUB") || trim.startsWith("MUL") || trim.startsWith("DIV")
-                        || trim.startsWith("IADD") || trim.startsWith("ISUB") || trim.startsWith("IMUL") || trim.startsWith("IDIV")
-                        || trim.startsWith("MOV_") || trim.startsWith("LD") || trim.startsWith("STO")
-                        || trim.startsWith("JMP") || trim.startsWith("JZ") || trim.startsWith("JC") || trim.startsWith("JNZ")
-                        || trim.startsWith("JNC") || trim.startsWith("JNB") || trim.startsWith("JB") || trim.startsWith("JP") || trim.startsWith("JNP")
-                        || trim.startsWith("B") || trim.startsWith("BC") || trim.startsWith("BZ") || trim.startsWith("BNZ") || trim.startsWith("BNB")
-                        || trim.startsWith("BP") || trim.startsWith("BNP") || trim.startsWith("BB")
-                        || trim.startsWith("POKX") || trim.startsWith("POKY") || trim.startsWith("POKE")
-                        || trim.startsWith("PXYD") || trim.startsWith("PIKX") || trim.startsWith("PIKY") || trim.startsWith("PIYD")
-                        || trim.startsWith("OUT") || trim.startsWith("PSAX") || trim.startsWith("PSAH") || trim.startsWith("PSAL")
-                        || trim.startsWith("POPX") || trim.startsWith("POPH") || trim.startsWith("POPL")
-                        || trim.startsWith("DEC") || trim.startsWith("DECE") || trim.startsWith("HLT")
-                        || trim.startsWith("NOP") || trim.startsWith("RST") || trim.startsWith("PST")) {
-                    codeSection.add(trim);
-                } else if (trim.contains("=") && containsOp(trim)) {
-                    compileExpression(trim);
-                } else if (trim.contains("=")) {
-                    String[] parts = trim.split("=");
-                    String left = parts[0].trim();
-                    String right = parts[1].replace(";", "").trim();
-                    codeSection.add("LDA  " + right + " ;; Load value into A");
-                    codeSection.add("STA  " + left + " ;; Store value from A into " + left);
-                } else if (trim.contains("(")) {
-                    String call = trim.split("\\(")[0].trim();
-                    String arg = trim.replaceAll(".*\\((.*)\\).*", "$1");
-                    if (!arg.isEmpty()) {
-                        codeSection.add((isNumber(arg) ? "LDA _" : "LDA ") + arg);
-                        codeSection.add("PSAX ;; Push the argument onto the stack");
-                    }
-                    codeSection.add("B " + call + " ;; Call the function");
-                } else if (trim.startsWith(".")) {
-                    codeSection.add(";; Label: " + trim);
-                    codeSection.add(trim);
-                }
-            }
-
-            if (name.equals("main")) {
-                codeSection.add("BX _00 ;; Return from main");
-            }
-
-            codeSection.add(";;;;;;;;;;;;;;;\n;; END " + name + " ;;");
         }
+        boolean endif = false;
+        for (String line : body) {
+            if (endif) {
+                // Reset flag to allow if-else parsing
+                endif = false;
+                noIfElse = false; // Reset flag to allow if-else parsing
+                continue;
+            }
+            String trim = line.trim();
+            if (trim.isEmpty() || trim.startsWith("__asm") || trim.startsWith(";;")) {
+                continue;
+            }
+
+            if (trim.startsWith("if(") || trim.startsWith("if (")) {
+                //Guess if next trim is an function call or __asm
+                String nextTrim = body.get(body.indexOf(line) + 1).trim();
+                String functionName = "";
+                if (nextTrim.startsWith("__asm")) {
+                    // Handle inline assembly
+                } else {
+                    // Handle function call
+                    functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
+                }
+                parseIf(trim, functionName);
+                noIfElse = true;
+                continue;
+            }
+
+            if (trim.startsWith("else if(") || trim.startsWith("else if (") || trim.startsWith("} else if (") || trim.startsWith("} else if(") || trim.startsWith("}else if (") || trim.startsWith("}else if(") || trim.startsWith("else{") || trim.startsWith("} else if (")) {
+                //Guess if next trim is an function call or __asm
+                String nextTrim = body.get(body.indexOf(line) + 1).trim();
+                String functionName = "";
+                if (nextTrim.startsWith("__asm")) {
+                    // Handle inline assembly
+                } else {
+                    // Handle function call
+                    functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
+                }
+                parseIf(trim, functionName);
+                noIfElse = true;
+                continue;
+            }
+
+            if (trim.startsWith("else{") || trim.startsWith("else {") || trim.startsWith("} else {") || trim.startsWith("} else{") || trim.startsWith("}else {") || trim.startsWith("}else{")) {
+                                //Guess if next trim is an function call or __asm
+                String nextTrim = body.get(body.indexOf(line) + 1).trim();
+                String functionName = "";
+                if (nextTrim.startsWith("__asm")) {
+                    // Handle inline assembly
+                    codeSection.add(";; Inline assembly");
+                    int counter = 0;
+                    while (!nextTrim.startsWith("}")) {
+                        codeSection.add(nextTrim);
+                        nextTrim = body.get(body.indexOf(line) + 2).trim();
+                        counter++;
+                    }
+                } else {
+                    // Handle function call
+                    functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
+                }
+                parseElse(trim, functionName);
+                endif = true; // Reset flag to allow if-else parsing
+                continue;
+            }
+
+            if (trim.equals("break;")) {
+                if (!breakStack.isEmpty()) {
+                    codeSection.add("JMP " + breakStack.get(breakStack.size() - 1));
+                }
+                continue;
+            }
+
+            if (trim.equals("continue;")) {
+                if (!continueStack.isEmpty()) {
+                    codeSection.add("JMP " + continueStack.get(continueStack.size() - 1));
+                }
+                continue;
+            }
+
+            // WHILE
+            if (trim.startsWith("while(")) {
+                String condition = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
+                String loopStart = "__while_start_" + labelCounter;
+                blockEndLabel.add("__while_end_" + labelCounter);
+                //Address is 32b ending in h: ex 00000000h
+                dataSection.add(loopStart + " " + String.format("%08xh", funcOffset) + "h ;; While loop start");
+                funcOffset -= 0x4000; // Adjust function offset for next label
+                labelCounter++;
+                continue;
+            }
+
+            // FOR (assumes format for(init; condition; inc))
+            if (trim.startsWith("for(")) {
+                String content = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
+                String[] parts = content.split(";");
+                String init = parts[0].trim(), cond = parts[1].trim(), inc = parts[2].trim();
+                String loopStart = "__for_start_" + labelCounter;
+                String loopEnd = "__for_end_" + labelCounter;
+                String incLabel = "__for_inc_" + labelCounter;
+                blockEndLabel.add(loopEnd);
+                labelCounter++;
+
+                continue;
+            }
+
+            // DO-WHILE
+            if (trim.startsWith("do {")) {
+                String label = "__do_while_start_" + labelCounter;
+                blockEndLabel.add("__do_while_end_" + labelCounter);
+                labelCounter++;
+                continue;
+            }
+            if (trim.startsWith("} while(")) {
+                String condition = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
+                String startLabel = continueStack.remove(continueStack.size() - 1);
+                String endLabel = breakStack.remove(breakStack.size() - 1);
+                blockEndLabel.add("__do_while_end_" + labelCounter);
+                labelCounter++;
+
+                continue;
+            }
+
+            // SWITCH & CASE (básico)
+            if (trim.startsWith("switch(")) {
+                // Implementar con análisis de case:
+                // codeSection.add("LDA <switch_var>"); guardar estado actual para comparaciones posteriores
+                continue;
+            }
+            if (trim.startsWith("case ")) {
+                // codeSection.add("SUB <value>"); codeSection.add("JZ __case_label_<counter>");
+                continue;
+            }
+            if (trim.equals("default:")) {
+                // codeSection.add("__default_label_<counter>");
+                continue;
+            }
+
+            if (trim.equals("}")) {
+                if (!breakStack.isEmpty()) {
+                    breakStack.remove(breakStack.size() - 1);
+                }
+                if (!continueStack.isEmpty()) {
+                    continueStack.remove(continueStack.size() - 1);
+                }
+
+                /*
+                    if (!blockEndLabel.isEmpty()) {
+                        String endLabel = blockEndLabel.remove(blockEndLabel.size() - 1);
+                        codeSection.add("BX _00 ;; Return to end of block");
+                    }
+
+                 */
+                codeSection.add(";; End of block");
+                continue;
+            } else if (trim.contains("BX")) {
+                codeSection.add("BX _00 ;; Return from function");
+            } else if (trim.contains("POP")) {
+                codeSection.add("POPX " + functionArgs.get(name).get(0) + " ;; Pop the argument from the stack");
+            } else if (trim.startsWith("OUT ")) {
+                String arg = trim.substring(4).trim();
+                codeSection.add("OUT " + arg + " ;; Output var");
+            } else if (trim.equals("OUTA") || trim.equals("OUTB") || trim.equals("OUTC") || trim.equals("OUTD")
+                    || trim.equals("DEC") || trim.equals("DECE") || trim.equals("HLT") || trim.equals("NOP")
+                    || trim.equals("RST") || trim.equals("PST") || trim.equals("PTRI") || trim.equals("PTRD")
+                    || trim.equals("PTRL") || trim.equals("PTRS")) {
+                codeSection.add(trim + " ;; Inline mnemonic");
+            } else if (trim.startsWith("LDA") || trim.startsWith("LDB") || trim.startsWith("LDC") || trim.startsWith("LDD")
+                    || trim.startsWith("LDIA") || trim.startsWith("LDIB") || trim.startsWith("LDIC") || trim.startsWith("LDID")
+                    || trim.startsWith("STA") || trim.startsWith("STB") || trim.startsWith("STC") || trim.startsWith("STD")
+                    || trim.startsWith("ADD") || trim.startsWith("SUB") || trim.startsWith("MUL") || trim.startsWith("DIV")
+                    || trim.startsWith("IADD") || trim.startsWith("ISUB") || trim.startsWith("IMUL") || trim.startsWith("IDIV")
+                    || trim.startsWith("MOV_") || trim.startsWith("LD") || trim.startsWith("STO")
+                    || trim.startsWith("JMP") || trim.startsWith("JZ") || trim.startsWith("JC") || trim.startsWith("JNZ")
+                    || trim.startsWith("JNC") || trim.startsWith("JNB") || trim.startsWith("JB") || trim.startsWith("JP") || trim.startsWith("JNP")
+                    || trim.startsWith("B") || trim.startsWith("BC") || trim.startsWith("BZ") || trim.startsWith("BNZ") || trim.startsWith("BNB")
+                    || trim.startsWith("BP") || trim.startsWith("BNP") || trim.startsWith("BB")
+                    || trim.startsWith("POKX") || trim.startsWith("POKY") || trim.startsWith("POKE")
+                    || trim.startsWith("PXYD") || trim.startsWith("PIKX") || trim.startsWith("PIKY") || trim.startsWith("PIYD")
+                    || trim.startsWith("OUT") || trim.startsWith("PSAX") || trim.startsWith("PSAH") || trim.startsWith("PSAL")
+                    || trim.startsWith("POPX") || trim.startsWith("POPH") || trim.startsWith("POPL")
+                    || trim.startsWith("DEC") || trim.startsWith("DECE") || trim.startsWith("HLT")
+                    || trim.startsWith("NOP") || trim.startsWith("RST") || trim.startsWith("PST")) {
+
+                codeSection.add(trim);
+            } else if (trim.contains("=") && containsOp(trim)) {
+                compileExpression(trim);
+            } else if (trim.contains("=")) {
+                String[] parts = trim.split("=");
+                String left = parts[0].trim();
+                String right = parts[1].replace(";", "").trim();
+                codeSection.add("LDA  " + right + " ;; Load value into A");
+                codeSection.add("STA  " + left + " ;; Store value from A into " + left);
+            } else if (trim.contains("(") && !noIfElse) {
+                String call = trim.split("\\(")[0].trim();
+                String arg = trim.replaceAll(".*\\((.*)\\).*", "$1");
+                if (!arg.isEmpty()) {
+                    codeSection.add((isNumber(arg) ? "LDA _" : "LDA ") + arg);
+                    codeSection.add("PSAX ;; Push the argument onto the stack");
+                }
+                codeSection.add("B " + call + " ;; Call the function");
+            } else if (trim.startsWith(".")) {
+                trim = trim.substring(1).trim(); // Remove leading dot
+                codeSection.add(";; Label: " + trim);
+                codeSection.add(trim);
+                //dataSection.add(trim + " " + Integer.toHexString(funcOffset) + "h ;; Label offset");
+                //funcOffset -= 0x4000; // Adjust function offset for next label
+            }
+        }
+
+        if (name.equals("main")) {
+            codeSection.add("BX _00 ;; Return from main");
+        }
+
+        codeSection.add(";;;;;;;;;;;;;;;\n;; END " + name + " ;;");
+    }
+
+    private static void parseIf(String trim, String functionName) {
+        String condition = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
+        String labelIn = "IF_IN_" + labelCounter;
+        String labelDest = functionName;
+
+        //dataSection.add(labelIn + " " + String.format("%08xh", funcOffset) + " ;; If label");
+        //funcOffset -= 0x4000; // Adjust function offset for next label
+        //dataSection.add(labelDest + " " + String.format("%08xh", funcOffset) + " ;; DEST of if label");
+        //funcOffset -= 0x4000; // Adjust function offset for next label
+        generateConditionalCall(condition, labelIn, labelDest);
+        conditions.put(labelDest, Arrays.asList(condition.split("\\n")));
+        labelCounter++;
+    }
+
+    private static void parseElse(String trim, String functionName) {
+        String labelEnd = functionName;
+        String code = ";; Else block code for: " + labelEnd + "\n";
+        codeSection.add(code);
+        for(Map.Entry<String, List<String>> entry : conditions.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue().toString().replace("[", "").replace("]", "").trim();
+
+            if(!codeSection.contains(";; Else condition for: " + labelEnd)) {
+                codeSection.add(";; Else condition for: " + labelEnd);
+            
+                if (value.contains("==")) {
+                    // If the previous condition was ==, we need to check if they are different (always the opposite)
+                    String[] parts = value.split("==");
+                    codeSection.add("LDA " + parts[1].trim() + " ;; Load left side of condition");
+                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract right side of condition");
+                    codeSection.add("BNZ " + labelEnd + " ;; Branch to else label if not zero");
+                } else if (value.contains("!=")) {
+                    String[] parts = value.split("!=");
+                    codeSection.add("LDA " + parts[1].trim() + " ;; Load left side of condition");
+                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract right side of condition");
+                    codeSection.add("BZ " + labelEnd + " ;; Branch to else label if zero");
+                } else if (value.contains("<=")) {
+                    String[] parts = value.split("<=");
+                    codeSection.add("LDA " + parts[1].trim() + " ;; Load left side of condition");
+                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract right side of condition");
+                    codeSection.add("BB " + labelEnd + " ;; Branch to else label if less than or equal");
+                } else if (value.contains(">=")) {
+                    String[] parts = value.split(">=");
+                    codeSection.add("LDA " + parts[1].trim() + " ;; Load right side of condition");
+                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract left side of condition");
+                    codeSection.add("BNB " + labelEnd + " ;; Branch to else label if greater than or equal");
+                } else if (value.contains("<")) {
+                    // If the previous condition was <, we need to check if the value is greater than or equal to the right side
+                    String[] parts = value.split("<");
+                    codeSection.add("LDA " + parts[1].trim() + " ;; Load right side of condition");
+                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract left side of condition");
+                    codeSection.add("BB " + labelEnd + " ;; Branch to else label if greater than or equal");
+                } else if (value.contains(">")) {
+                    //If the previous condition was >, we need to check if the value is less than or equal to the right side
+                    String[] parts = value.split(">");
+                    codeSection.add("LDA " + parts[1].trim() + " ;; Load left side of condition");
+                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract right side of condition");
+                    codeSection.add("BNB " + labelEnd + " ;; Branch to else label if less than or equal");
+                } else {
+                    throw new IllegalArgumentException("Condición no soportada: " + value);
+                }
+
+            }
+            
+        }
+    }
+
+    private static void generateConditionalCall(String condition, String ifLabel, String labelDest) {
+        codeSection.add(";; If condition: " + condition);
+        generateConditionalBody(condition, ifLabel, labelDest);
+    }
+
+    private static void generateConditionalBody(String condition, String ifLabel, String labelDest) {
+        String code = ";; Conditional code for: " + condition + " \n";
+
+        //code += ";; If label: " + ifLabel + " \n";
+        // code += "." + labelDest + " ;; Destination label for condition\n";
+        if (condition.contains("==")) {
+            String[] parts = condition.split("==");
+            code += "LDA " + parts[0].trim() + " ;; Load left side of condition\n";
+            code += "SUB " + parts[1].trim() + " ;; Subtract right side of condition\n";
+            code += "BZ " + labelDest + " ;; Branch to destination label if zero\n";
+            //codeSection.add("JMP " + elseLabel);
+        } else if (condition.contains("!=")) {
+            String[] parts = condition.split("!=");
+            code += "LDA " + parts[0].trim() + " ;; Load left side of condition\n";
+            code += "SUB " + parts[1].trim() + " ;; Subtract right side of condition\n";
+            code += "BNZ " + labelDest + " ;; Branch to destination label if not zero\n";
+            //codeSection.add("JMP " + elseLabel);
+        } else if (condition.contains("<")) {
+            String[] parts = condition.split("<");
+            code += "LDA " + parts[0].trim() + " ;; Load left side of condition\n";
+            code += "SUB " + parts[1].trim() + " ;; Subtract right side of condition\n";
+            code += "BB " + labelDest + " ;; Branch to destination label if less than\n";
+            //codeSection.add("JMP " + elseLabel);
+        } else if (condition.contains(">")) {
+            String[] parts = condition.split(">");
+            code += "LDA " + parts[0].trim() + " ;; Load right side of condition\n";
+            code += "SUB " + parts[1].trim() + " ;; Subtract left side of condition\n";
+            code += "BNB " + labelDest + " ;; Branch to destination label if greater than\n";
+            //codeSection.add("JMP " + elseLabel);
+        } else if (condition.contains("<=")) {
+            String[] parts = condition.split("<=");
+            code += "LDA " + parts[0].trim() + " ;; Load left side of condition\n";
+            code += "SUB " + parts[1].trim() + " ;; Subtract right side of condition\n";
+            code += "BB " + labelDest + " ;; Branch to destination label if less than or equal\n";
+            //codeSection.add("JMP " + elseLabel);
+        } else if (condition.contains(">=")) {
+            String[] parts = condition.split(">=");
+            code += "LDA " + parts[0].trim() + " ;; Load right side of condition\n";
+            code += "SUB " + parts[1].trim() + " ;; Subtract left side of condition\n";
+            code += "BNB " + labelDest + " ;; Branch to destination label if greater than or equal\n";
+            //codeSection.add("JMP " + elseLabel);
+        } else {
+            throw new IllegalArgumentException("Condición no soportada: " + condition);
+        }
+
+        //code += "BX _00 ;; Return from function\n";
+        //ifBodies.put(ifLabel, Arrays.asList(code.split("\\n")));
+        //functionArgs.put(ifLabel, new ArrayList<>()); // No arguments for if statements
+        //conditions.put(ifLabel, Arrays.asList(code.split("\\n")));
+        codeSection.add(code);
     }
 
     private static boolean containsOp(String line) {

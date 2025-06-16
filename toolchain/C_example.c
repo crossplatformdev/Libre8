@@ -1,92 +1,71 @@
-int a = 40;
-int b = 2;
+char a = '0'; // Global variable
+char b = '5'; // Another global variable
 
-char *str = "Hello, World!";
+char gt = '>'; // Global variable for greater than
+char lt = '<'; // Global variable for less than
+char eq = '='; // Global variable for equal to
 
-int hello_world() {
+int lesser(){
     __asm {
-        ; Print "Hello, World!" to the console
-        LDA str0
+        LDA a // Load the value of 'a' into the accumulator
         OUTA
-        LDA str1
+        LDA lt // Load the greater than symbol into the accumulator
         OUTA
-        LDA str2
+        LDA b // Load the value of 'b' into the accumulator
         OUTA
-        LDA str3
+        LDA _0a // Load the new line character into the accumulator
         OUTA
-        LDA str4
-        OUTA
-        LDA str5
-        OUTA
-        LDA str6
-        OUTA
-        LDA str7
-        OUTA
-        LDA str8
-        OUTA
-        LDA str9
-        OUTA
-        LDA str10
-        OUTA
-        LDA str11
-        OUTA
-        LDA str12
-        OUTA
-        LDA _0a
-        OUTA
-
-        BX _0a
+        BX _00
     }
 }
 
-int one_argument_function(int arg1) {
-    __asm {
-        POPX arg1 ;; Pop the argument from the stack
-        STA arg1 ;; Store the argument in arg1
-        LDA arg1 ;; Load the argument
-        OUTA ;; Print the argument
 
-        BX arg1 ;; Return from the function
+int equal(){
+    __asm {
+        LDA a // Load the value of 'a' into the accumulator
+        OUTA
+        LDA eq // Load the equal to symbol into the accumulator
+        OUTA
+        LDA b // Load the value of 'b' into the accumulator
+        OUTA
+        LDA _0a // Load the new line character into the accumulator
+        OUTA
+        BX _00
+    }
+}
+
+int greater(){
+    __asm {
+        LDA a // Load the value of 'a' into the accumulator
+        OUTA
+        LDA gt // Load the less than symbol into the accumulator
+        OUTA
+        LDA b // Load the value of 'b' into the accumulator
+        OUTA
+        LDA _0a // Load the new line character into the accumulator
+        OUTA
+        BX _00
     }
 }
 
 int main() {
-    // Call the hello_world function
-    hello_world();
-
-    // Perform a simple addition
-    int result1 = a + b;
 
     __asm {
-        LDA result1 ;; Load the result of the addition
-        OUTA ;; Print 42
+        DECE // Read input character into 'a'
+        STA a // Store the value in global variable 'a'
     }
 
-        // Perform a simple addition
-    int result2 = a + 2;
+    if (a < b) {
+        lesser();
+    } else if (a == b) {
+        equal();
+    } else {
+        greater();
+    }
 
     __asm {
-        LDA result2 ;; Load the result of the addition
-        OUTA ;; Print 42
+        JMP main // Jump back to the start of the main function
     }
 
-    int result3 = 40 + 2;
-
-    __asm {
-        LDA result3 ;; Load the result of the addition
-        OUTA ;; Print 42
-    }
-
-    // this is equivalent
-    one_argument_function(42);
-    // to this
-    /*
-    __asm {
-        LDIA 42 ;; Load the immediate value 42
-        PSAX ;; Push the argument onto the stack
-        B one_argument_function ;; Call the function
-    }
-    */
-    
     return 0;
 }
