@@ -9,4 +9,8 @@ int main() {
         LDA _00     ;; Load the value 0 into the accumulator
         SUB _01     ;; Subtract 1 from the accumulator
     }
+
+    __asm{
+        JMP main
+    }
 }
