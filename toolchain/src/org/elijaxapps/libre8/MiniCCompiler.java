@@ -43,6 +43,7 @@ public class MiniCCompiler {
 
     private static boolean noIfElse = false; // Flag to skip if-else parsing
     private static final Map<String, List<String>> conditions = new LinkedHashMap<>();
+
     public static void main(String[] args) throws IOException {
         String input = readFile("C_example.c");
         parseGlobals(input);
@@ -111,7 +112,11 @@ public class MiniCCompiler {
             } else if (type.equals("int")) {
                 variables.put(name, varOffset--);
                 if (value.matches("\\d+")) {
-                    initialValues.put(name, Integer.toHexString(Integer.parseInt(value)));
+                    String hexValue = Integer.toHexString(Integer.parseInt(value));
+                    while (hexValue.length() < 2) {
+                        hexValue = "0" + hexValue; // Ensure at least two characters for char values
+                    }
+                    initialValues.put(name, hexValue);
                     //If value is not a number, assume it is an expression
                 } else if (value.matches("\\d+\\s*[-+*/]\\s*\\d+")) {
                     initialValues.put(name, "00");
@@ -144,7 +149,7 @@ public class MiniCCompiler {
             functionArgs.put(name, argList);
             functionBodies.put(name, Arrays.asList(body.trim().split("\\n")));
             functions.put(name, funcOffset);
-            dataSection.add(name + " " + String.format("%08xh", funcOffset) + " ;; Function offset");
+            //dataSection.add(name + " " + String.format("%08xh", funcOffset) + " ;; Function offset");
             funcOffset -= 0x4000;
         }
     }
@@ -182,17 +187,17 @@ public class MiniCCompiler {
     }
 
     private static void generateCodeSection() {
-        codeSection.add(";;;;;;;;;;;;;;;\n"
-                + ";; CODE BEGIN ;;\n"
-                + ";;;;;;;;;;;;;;;\n"
-                + ".code\n"
-                + "B main ;; Branch to main function"
-                + "\n");
 
-        while (functionBodies.size() > 0) {
-            Map.Entry<String, List<String>> entry = functionBodies.entrySet().iterator().next();
-            generateCode(entry);
-            functionBodies.remove(entry.getKey());
+        codeSection.add(";;;;;;;;;;;;;;;;\n"
+                + ";; CODE BEGIN ;;\n"
+                + ";;;;;;;;;;;;;;;;\n"
+                + ".code\n"
+                + "B main ;; Branch to main function\n"
+                + "JMP 00000000h ;; Jump to end of code section (placeholder for main function)\n");
+        ;
+        for (Map.Entry<String, List<String>> entry : functionBodies.entrySet()) {
+            Map.Entry<String, List<String>> fn = entry;
+            generateCode(fn);
         }
 
         for (Map.Entry<String, List<String>> fn : ifBodies.entrySet()) {
@@ -203,7 +208,6 @@ public class MiniCCompiler {
             String condition = fn.getValue().toString().replace("[", "").replace("]", "").trim();
             generateConditionalBody(condition, ifLabel, elseLabel);
         }
-
     }
 
     public static void generateCode(Map.Entry<String, List<String>> fn) {
@@ -222,10 +226,11 @@ public class MiniCCompiler {
             if (endif) {
                 // Reset flag to allow if-else parsing
                 endif = false;
-                noIfElse = false; // Reset flag to allow if-else parsing
+                noIfElse = true; // Reset flag to allow if-else parsing
                 continue;
             }
             String trim = line.trim();
+            trim = trim.replaceAll("//", ";;"); // Normalize whitespace
             if (trim.isEmpty() || trim.startsWith("__asm") || trim.startsWith(";;")) {
                 continue;
             }
@@ -235,13 +240,36 @@ public class MiniCCompiler {
                 String nextTrim = body.get(body.indexOf(line) + 1).trim();
                 String functionName = "";
                 if (nextTrim.startsWith("__asm")) {
-                    // Handle inline assembly
+                    functionName = "__asm_" + labelCounter;
+                    labelCounter += 1;
                 } else {
                     // Handle function call
                     functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
                 }
-                parseIf(trim, functionName);
-                noIfElse = true;
+
+                codeSection.add(parseIf(trim, functionName));
+
+                nextTrim = body.get(body.indexOf(line) + 1).trim();
+                /*
+                if (nextTrim.startsWith("__asm")) {
+
+                    // Handle inline assembly
+                    //dataSection.add(functionName + " " + String.format("%08xh", funcOffset) + " ;; Inline assembly function offset");
+                    //funcOffset -= 0x4000; // Adjust function offset for next label
+                    //codeSection.add(";; Function: " + functionName);
+                    //codeSection.add("." + functionName + " ;; Inline assembly function");
+                    int counter = 2;
+                    nextTrim = body.get(body.indexOf(line) + counter).trim();
+                    while (!nextTrim.equals("}")) {
+                        codeSection.add(nextTrim);
+                        nextTrim = body.get(body.indexOf(line) + counter).trim();
+                        counter++;
+                    }
+
+                    codeSection.add(";; End of inline assembly");
+                }
+                 */
+                noIfElse = false;
                 continue;
             }
 
@@ -250,35 +278,75 @@ public class MiniCCompiler {
                 String nextTrim = body.get(body.indexOf(line) + 1).trim();
                 String functionName = "";
                 if (nextTrim.startsWith("__asm")) {
-                    // Handle inline assembly
+                    functionName = "__asm_" + labelCounter;
+                    labelCounter += 1;
                 } else {
                     // Handle function call
                     functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
                 }
-                parseIf(trim, functionName);
-                noIfElse = true;
+
+                codeSection.add(parseIf(trim, functionName));
+                nextTrim = body.get(body.indexOf(line) + 1).trim();
+                
+                if (nextTrim.startsWith("__asm")) {
+
+                    // Handle inline assembly
+                    //dataSection.add(functionName + " " + String.format("%08xh", funcOffset) + " ;; Inline assembly function offset");
+                    //funcOffset -= 0x4000; // Adjust function offset for next label
+                    //codeSection.add(";; Function: " + functionName);
+                    //codeSection.add("." + functionName + " ;; Inline assembly function");
+
+                    int counter = 2;
+                    nextTrim = body.get(body.indexOf(line) + counter).trim();
+                    while (!nextTrim.equals("}")) {
+                        codeSection.add(nextTrim);
+                        counter++;
+                        nextTrim = body.get(body.indexOf(line) + counter).trim();
+                    }
+
+                    codeSection.add(";; End of inline assembly");
+
+                }
+                
+                noIfElse = false;
                 continue;
             }
 
             if (trim.startsWith("else{") || trim.startsWith("else {") || trim.startsWith("} else {") || trim.startsWith("} else{") || trim.startsWith("}else {") || trim.startsWith("}else{")) {
-                                //Guess if next trim is an function call or __asm
+                //Guess if next trim is an function call or __asm
                 String nextTrim = body.get(body.indexOf(line) + 1).trim();
                 String functionName = "";
+
                 if (nextTrim.startsWith("__asm")) {
-                    // Handle inline assembly
-                    codeSection.add(";; Inline assembly");
-                    int counter = 0;
-                    while (!nextTrim.startsWith("}")) {
-                        codeSection.add(nextTrim);
-                        nextTrim = body.get(body.indexOf(line) + 2).trim();
-                        counter++;
-                    }
+                    functionName = "__asm_" + labelCounter;
+                    labelCounter += 1;
                 } else {
                     // Handle function call
                     functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
                 }
-                parseElse(trim, functionName);
-                endif = true; // Reset flag to allow if-else parsing
+                
+                codeSection.add(parseElse(trim, functionName));
+                if (nextTrim.startsWith("__asm")) {
+
+                    // Handle inline assembly
+                    //dataSection.add(functionName + " " + String.format("%08xh", funcOffset) + " ;; Inline assembly function offset");
+                    //funcOffset -= 0x4000; // Adjust function offset for next label
+                    //codeSection.add(";; Function: " + functionName);
+                    //codeSection.add("." + functionName + " ;; Inline assembly function");
+                    nextTrim = body.get(body.indexOf(line) + 2).trim();
+
+                    int counter = 3;
+                    while (!nextTrim.equals("}")) {
+                        codeSection.add(nextTrim);
+                        counter++;
+                        nextTrim = body.get(body.indexOf(line) + counter).trim();
+                    }
+
+                    codeSection.add(";; End of inline assembly");
+
+                }
+                
+                noIfElse = false;
                 continue;
             }
 
@@ -309,16 +377,129 @@ public class MiniCCompiler {
             }
 
             // FOR (assumes format for(init; condition; inc))
-            if (trim.startsWith("for(")) {
+            if (trim.startsWith("for(") || trim.startsWith("for (")) {
                 String content = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
                 String[] parts = content.split(";");
-                String init = parts[0].trim(), cond = parts[1].trim(), inc = parts[2].trim();
+                String varname = parts[0].split("=")[0].replaceAll("int", "").trim();
+                String value = parts[0].split("=")[1].trim();
+                String cond = "(" + parts[1].trim() + ")";
+                String inc = parts[2].trim();
+                String incVar = "__for_inc_" + labelCounter;
+                String loopInit = "__for_init_" + labelCounter;
                 String loopStart = "__for_start_" + labelCounter;
                 String loopEnd = "__for_end_" + labelCounter;
-                String incLabel = "__for_inc_" + labelCounter;
-                blockEndLabel.add(loopEnd);
+                String topVal = "__for_top_" + labelCounter;
+                Integer topValValue = Integer.valueOf(cond.replaceAll("\\(", "").replaceAll("\\)", "").trim().split("<|>|==|!=|<=|>=|\\+|-|\\*|/")[1].trim());
+                String loopBody = "";
+
+                if (topValValue.equals(varname)) {
+                    topValValue = Integer.valueOf(cond.replaceAll("\\(", "").replaceAll("\\)", "").trim().split("<|>|==|!=|<=|>=|\\+|-|\\*|/")[0].trim());
+                }
+
+                boolean isSame = !varname.equals(topVal);
+
+                if (cond.contains("<") && isSame) {
+                    cond = '(' + varname + " < " + topVal + ')';
+                } else if (cond.contains(">") && isSame) {
+                    cond = '(' + varname + " > " + topVal + ')';
+                } else if (cond.contains("==") && isSame) {
+                    cond = '(' + varname + " == " + topVal + ')';
+                } else if (cond.contains("!=") && isSame) {
+                    cond = '(' + varname + " != " + topVal + ')';
+                } else if (cond.contains("<=") && isSame) {
+                    cond = '(' + varname + " <= " + topVal + ')';
+                } else if (cond.contains(">=") && isSame) {
+                    cond = '(' + varname + " >= " + topVal + ')';
+                }
+
+                int counter = 1;
+                String nextTrim = body.get(body.indexOf(line) + counter).trim();
+                if (nextTrim.startsWith("__asm")) {
+                    // Handle inline assembly
+                    //dataSection.add(loopStart + " " + String.format("%08xh", funcOffset) + "h ;; For loop start");
+                    //funcOffset -= 0x4000; // Adjust function offset for next label
+                    while (!nextTrim.equals("}")) {
+                        nextTrim = body.get(body.indexOf(line) + counter).trim();
+                        loopBody += nextTrim + "\n";
+                        counter++;
+                    }
+                } else {
+                    loopBody = nextTrim.split("\\(")[0]; // Assuming the loop body is a single line for simplicity
+                }
+
+                while (value.length() < 2) {
+                    value = "0" + value; // Ensure at least two characters for char values
+                }
+
+                dataSection.add(topVal + " " + String.format("%08xh", varOffset--) + " " + String.format("%02x", topValValue) + ";; For loop top value");
+                if (inc.contains("++")) {
+                    dataSection.add(incVar + " " + String.format("%08xh", varOffset--) + " 01;; For loop step");
+                } else if (inc.contains("--")) {
+                    dataSection.add(incVar + " " + String.format("%08xh", varOffset--) + " FF;; For loop step");
+                } else {
+                    if (inc.contains("+=")) {
+                        String incValue = inc.split("\\+=")[1].trim();
+                        if (incValue.length() < 2) {
+                            incValue = "0" + incValue; // Ensure at least two characters for char values
+                        }
+                        dataSection.add(incVar + " " + String.format("%08xh", varOffset--) + " " + String.format("%02x", topValValue) + ";; For loop step");
+                    } else if (inc.contains("-=")) {
+                        String incValue = inc.split("-=")[1].trim();
+                        if (incValue.length() < 2) {
+                            incValue = "0" + incValue; // Ensure at least two characters for char values
+                        }
+                        dataSection.add(incVar + " " + String.format("%08xh", varOffset--) + " " + String.format("%02x", topValValue) + ";; For loop step");
+                    } else {
+                        dataSection.add(incVar + " " + String.format("%08xh", varOffset--) + " 00;; For loop step");
+                    }
+                }
+
+                dataSection.add(loopEnd + " " + String.format("%08xh", funcOffset) + " ;; For loop end");
+                funcOffset -= 0x4000; // Adjust function offset for next label
+                dataSection.add(loopStart + " " + String.format("%08xh", funcOffset) + " ;; For loop start");
+                funcOffset -= 0x4000; // Adjust function offset for next label
+                dataSection.add(loopInit + " " + String.format("%08xh", funcOffset) + " ;; For loop initialization");
+                funcOffset -= 0x4000; // Adjust function offset for next label
+            
+
+                String functionName = loopBody;
+                codeSection.add(";; ENTERING FOR LOOP: " + functionName);
+                
+                if(name.equals("main")) {
+                    codeSection.add("JMP " + loopInit + " ;; Branch to for loop start");
+                } else {
+                    codeSection.add("B " + loopInit + " ;; Branch to for loop start");
+                }
+                
+
+                codeSection.add(";; For loop: " + loopStart);
+                codeSection.add(";; Initialization: " + varname + " = " + value);
+                codeSection.add(";; Condition: " + cond);
+                codeSection.add(";; Increment: " + inc);
+                codeSection.add(";; Loop end: " + loopEnd);
+                codeSection.add("." + loopInit);
+                codeSection.add("LDA _" + String.format("%02x", Integer.valueOf(value)) + " ;; Load the variable value");
+                codeSection.add("STA " + varname + " ;; Store the updated value back to the variable");
+                codeSection.add("JMP " + loopStart + " ;; Jump to loop start");
+                codeSection.add("." + loopStart);
+                codeSection.add("LDA " + varname + " ;; Load the variable value for condition check");
+                codeSection.add("ADD " + incVar + " ;; Subtract condition value");
+                codeSection.add("STA " + varname + " ;; Jump to loop end if condition is zero");
+                codeSection.add(parseIf(cond, functionName));
+                codeSection.add("JB " + loopStart + " ;; Jump to loop start if condition is met");
+                codeSection.add("JNB " + loopEnd);
+                codeSection.add("." + loopEnd);
+                //if (name.equals("main")) {
+                  //  codeSection.add("JMP main ;; Jump to main");
+                //} else {
+                    codeSection.add("BX _00 ;; Return from function");
+                //}
+
+                //codeSection.add("BX _00" + " ;; Jump to the end of the loop");
+                endif = true; // Set flag to skip next lines
                 labelCounter++;
 
+                //functionBodies.put(loopStart, Arrays.asList(code.split("\n")));
                 continue;
             }
 
@@ -370,7 +551,32 @@ public class MiniCCompiler {
 
                  */
                 codeSection.add(";; End of block");
+                if (noIfElse) {
+                    noIfElse = false; // Reset flag to allow if-else parsing                    
+                }
                 continue;
+            } else if (trim.startsWith("return ")) {
+                String returnValue = trim.split(";")[0].replace("return", "").trim();
+                if (!returnValue.isEmpty()) {
+                    if (isNumber(returnValue)) {
+                        if (returnValue.length() < 8) {
+                            returnValue = "0" + returnValue; // Ensure at least two characters for char values
+                        }
+                        codeSection.add("BX _" + returnValue + " ;; Return");
+                    } else {
+                        codeSection.add("BX " + returnValue + " ;; Return");
+                    }
+                } else {
+                    codeSection.add("LDA _00 ;; Load zero as default return value");
+                }
+            } else if (trim.startsWith("break;")) {
+                if (!breakStack.isEmpty()) {
+                    codeSection.add("JMP " + breakStack.get(breakStack.size() - 1) + " ;; Break to label");
+                }
+            } else if (trim.startsWith("continue;")) {
+                if (!continueStack.isEmpty()) {
+                    codeSection.add("JMP " + continueStack.get(continueStack.size() - 1) + " ;; Continue to label");
+                }
             } else if (trim.contains("BX")) {
                 codeSection.add("BX _00 ;; Return from function");
             } else if (trim.contains("POP")) {
@@ -381,9 +587,7 @@ public class MiniCCompiler {
             } else if (trim.equals("OUTA") || trim.equals("OUTB") || trim.equals("OUTC") || trim.equals("OUTD")
                     || trim.equals("DEC") || trim.equals("DECE") || trim.equals("HLT") || trim.equals("NOP")
                     || trim.equals("RST") || trim.equals("PST") || trim.equals("PTRI") || trim.equals("PTRD")
-                    || trim.equals("PTRL") || trim.equals("PTRS")) {
-                codeSection.add(trim + " ;; Inline mnemonic");
-            } else if (trim.startsWith("LDA") || trim.startsWith("LDB") || trim.startsWith("LDC") || trim.startsWith("LDD")
+                    || trim.equals("PTRL") || trim.equals("PTRS") || (trim.startsWith("LDA") || trim.startsWith("LDB") || trim.startsWith("LDC") || trim.startsWith("LDD")
                     || trim.startsWith("LDIA") || trim.startsWith("LDIB") || trim.startsWith("LDIC") || trim.startsWith("LDID")
                     || trim.startsWith("STA") || trim.startsWith("STB") || trim.startsWith("STC") || trim.startsWith("STD")
                     || trim.startsWith("ADD") || trim.startsWith("SUB") || trim.startsWith("MUL") || trim.startsWith("DIV")
@@ -398,9 +602,12 @@ public class MiniCCompiler {
                     || trim.startsWith("OUT") || trim.startsWith("PSAX") || trim.startsWith("PSAH") || trim.startsWith("PSAL")
                     || trim.startsWith("POPX") || trim.startsWith("POPH") || trim.startsWith("POPL")
                     || trim.startsWith("DEC") || trim.startsWith("DECE") || trim.startsWith("HLT")
-                    || trim.startsWith("NOP") || trim.startsWith("RST") || trim.startsWith("PST")) {
+                    || trim.startsWith("NOP") || trim.startsWith("RST") || trim.startsWith("PST"))) {
+                if (!noIfElse) { // This condition is always true, so it can be removed
+                    // If the line is a valid instruction, add it to the code section
+                    codeSection.add(trim);
 
-                codeSection.add(trim);
+                }
             } else if (trim.contains("=") && containsOp(trim)) {
                 compileExpression(trim);
             } else if (trim.contains("=")) {
@@ -409,7 +616,7 @@ public class MiniCCompiler {
                 String right = parts[1].replace(";", "").trim();
                 codeSection.add("LDA  " + right + " ;; Load value into A");
                 codeSection.add("STA  " + left + " ;; Store value from A into " + left);
-            } else if (trim.contains("(") && !noIfElse) {
+            } else if (trim.contains("(") && noIfElse) {
                 String call = trim.split("\\(")[0].trim();
                 String arg = trim.replaceAll(".*\\((.*)\\).*", "$1");
                 if (!arg.isEmpty()) {
@@ -433,7 +640,7 @@ public class MiniCCompiler {
         codeSection.add(";;;;;;;;;;;;;;;\n;; END " + name + " ;;");
     }
 
-    private static void parseIf(String trim, String functionName) {
+    private static String parseIf(String trim, String functionName) {
         String condition = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
         String labelIn = "IF_IN_" + labelCounter;
         String labelDest = functionName;
@@ -442,109 +649,170 @@ public class MiniCCompiler {
         //funcOffset -= 0x4000; // Adjust function offset for next label
         //dataSection.add(labelDest + " " + String.format("%08xh", funcOffset) + " ;; DEST of if label");
         //funcOffset -= 0x4000; // Adjust function offset for next label
-        generateConditionalCall(condition, labelIn, labelDest);
+        String code = generateConditionalCall(condition, labelIn, labelDest);
         conditions.put(labelDest, Arrays.asList(condition.split("\\n")));
         labelCounter++;
+        return code;
     }
 
-    private static void parseElse(String trim, String functionName) {
+    private static String parseElse(String trim, String functionName) {
         String labelEnd = functionName;
         String code = ";; Else block code for: " + labelEnd + "\n";
-        codeSection.add(code);
-        for(Map.Entry<String, List<String>> entry : conditions.entrySet()) {
+ 
+        //codeSection.add(code);
+        for (Map.Entry<String, List<String>> entry : conditions.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue().toString().replace("[", "").replace("]", "").trim();
-
-            if(!codeSection.contains(";; Else condition for: " + labelEnd)) {
-                codeSection.add(";; Else condition for: " + labelEnd);
-            
-                if (value.contains("==")) {
-                    // If the previous condition was ==, we need to check if they are different (always the opposite)
-                    String[] parts = value.split("==");
-                    codeSection.add("LDA " + parts[1].trim() + " ;; Load left side of condition");
-                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract right side of condition");
-                    codeSection.add("BNZ " + labelEnd + " ;; Branch to else label if not zero");
-                } else if (value.contains("!=")) {
-                    String[] parts = value.split("!=");
-                    codeSection.add("LDA " + parts[1].trim() + " ;; Load left side of condition");
-                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract right side of condition");
-                    codeSection.add("BZ " + labelEnd + " ;; Branch to else label if zero");
-                } else if (value.contains("<=")) {
-                    String[] parts = value.split("<=");
-                    codeSection.add("LDA " + parts[1].trim() + " ;; Load left side of condition");
-                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract right side of condition");
-                    codeSection.add("BB " + labelEnd + " ;; Branch to else label if less than or equal");
-                } else if (value.contains(">=")) {
-                    String[] parts = value.split(">=");
-                    codeSection.add("LDA " + parts[1].trim() + " ;; Load right side of condition");
-                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract left side of condition");
-                    codeSection.add("BNB " + labelEnd + " ;; Branch to else label if greater than or equal");
-                } else if (value.contains("<")) {
-                    // If the previous condition was <, we need to check if the value is greater than or equal to the right side
-                    String[] parts = value.split("<");
-                    codeSection.add("LDA " + parts[1].trim() + " ;; Load right side of condition");
-                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract left side of condition");
-                    codeSection.add("BB " + labelEnd + " ;; Branch to else label if greater than or equal");
-                } else if (value.contains(">")) {
-                    //If the previous condition was >, we need to check if the value is less than or equal to the right side
-                    String[] parts = value.split(">");
-                    codeSection.add("LDA " + parts[1].trim() + " ;; Load left side of condition");
-                    codeSection.add("SUB " + parts[0].trim() + " ;; Subtract right side of condition");
-                    codeSection.add("BNB " + labelEnd + " ;; Branch to else label if less than or equal");
-                } else {
-                    throw new IllegalArgumentException("Condición no soportada: " + value);
+            String[] parts = value.split("==|!=|<|>|<=|>=");
+            if (isNumber(parts[0].trim())) {
+                if (parts[0].trim().length() < 2) {
+                    parts[0] = "0" + parts[0].trim(); // Ensure at least two characters for char values
                 }
-
+                parts[0] = "_" + parts[0].trim(); // Ensure numbers are prefixed with _
             }
-            
+            if (isNumber(parts[1].trim())) {
+                if (parts[1].trim().length() < 2) {
+                    parts[1] = "0" + parts[1].trim(); // Ensure at least two characters for char values
+                }
+                parts[1] = "_" + parts[1].trim(); // Ensure numbers are prefixed with _
+            }
+
+            if (value.contains("==")) {
+                // If the previous condition was ==, we need to check if they are different (always the opposite)
+                code += ("LDA " + parts[1].trim() + " ;; Load left side of condition\n");
+                code += ("SUB " + parts[0].trim() + " ;; Subtract right side of condition\n");
+                if (labelEnd.startsWith("__asm")) {
+                    code += ("JNZ " + labelEnd + " ;; Branch to else label if not zero\n");
+                } else {
+                    code += ("BNZ " + labelEnd + " ;; Branch to else label if zero\n");
+                }
+            } else if (value.contains("!=")) {
+                code += ("LDA " + parts[1].trim() + " ;; Load left side of condition\n");
+                code += ("SUB " + parts[0].trim() + " ;; Subtract right side of condition\n");
+                if (labelEnd.startsWith("__asm")) {
+                    code += ("JZ " + labelEnd + " ;; Branch to else label if zero\n");
+                } else {
+                    code += ("BZ " + labelEnd + " ;; Branch to else label if zero\n");
+                }
+            } else if (value.contains("<=")) {
+                code += ("LDA " + parts[1].trim() + " ;; Load left side of condition\n");
+                code += ("SUB " + parts[0].trim() + " ;; Subtract right side of condition\n");
+                if (labelEnd.startsWith("__asm")) {
+                    code += ("JB " + labelEnd + " ;; Branch to else label if less than or equal\n");
+                } else {
+                    code += ("BB " + labelEnd + " ;; Branch to else label if less than or equal\n");
+                }
+            } else if (value.contains(">=")) {
+                code += ("LDA " + parts[1].trim() + " ;; Load right side of condition\n");
+                code += ("SUB " + parts[0].trim() + " ;; Subtract left side of condition\n");
+                if (labelEnd.startsWith("__asm")) {
+                    code += ("BNB " + labelEnd + " ;; Branch to else label if greater than or equal\n");
+                } else {
+                    code += ("BNB " + labelEnd + " ;; Branch to else label if greater than or equal\n");
+                }
+            } else if (value.contains("<")) {
+                // If the previous condition was <, we need to check if the value is greater than or equal to the right side
+                code += ("LDA " + parts[1].trim() + " ;; Load right side of condition\n");
+                code += ("SUB " + parts[0].trim() + " ;; Subtract left side of condition\n");
+                if (labelEnd.startsWith("__asm")) {
+                    code += ("JB " + labelEnd + " ;; Branch to else label if greater than or equal\n");
+                } else {
+                    code += ("BB " + labelEnd + " ;; Branch to else label if greater than or equal\n");
+                }
+            } else if (value.contains(">")) {
+                //If the previous condition was >, we need to check if the value is less than or equal to the right side
+                code += ("LDA " + parts[1].trim() + " ;; Load left side of condition\n");
+                code += ("SUB " + parts[0].trim() + " ;; Subtract right side of condition\n");
+                if (labelEnd.startsWith("__asm")) {
+                    code += ("JNB " + labelEnd + " ;; Branch to else label if less than or equal\n");
+                } else {
+                    code += ("BNB " + labelEnd + " ;; Branch to else label if less than or equal\n");
+                }
+            } else {
+                throw new IllegalArgumentException("Condición no soportada: " + value);
+            }
+
         }
+
+        return code;
     }
 
-    private static void generateConditionalCall(String condition, String ifLabel, String labelDest) {
+    private static String generateConditionalCall(String condition, String ifLabel, String labelDest) {
         codeSection.add(";; If condition: " + condition);
-        generateConditionalBody(condition, ifLabel, labelDest);
+        return generateConditionalBody(condition, ifLabel, labelDest);
     }
 
-    private static void generateConditionalBody(String condition, String ifLabel, String labelDest) {
+    private static String generateConditionalBody(String condition, String ifLabel, String labelDest) {
         String code = ";; Conditional code for: " + condition + " \n";
-
+        String[] parts = condition.split("==|!=|<|>|<=|>=");
+        if (isNumber(parts[0].trim())) {
+            if (parts[0].trim().length() < 2) {
+                parts[0] = "0" + parts[0].trim(); // Ensure at least two characters for char values
+            }
+            parts[0] = "_" + parts[0].trim(); // Ensure numbers are prefixed with _
+        }
+        if (isNumber(parts[1].trim())) {
+            if (parts[1].trim().length() < 2) {
+                parts[1] = "0" + parts[1].trim(); // Ensure at least two characters for char values
+            }
+            parts[1] = "_" + parts[1].trim(); // Ensure numbers are prefixed with _
+        }
         //code += ";; If label: " + ifLabel + " \n";
         // code += "." + labelDest + " ;; Destination label for condition\n";
         if (condition.contains("==")) {
-            String[] parts = condition.split("==");
+
             code += "LDA " + parts[0].trim() + " ;; Load left side of condition\n";
             code += "SUB " + parts[1].trim() + " ;; Subtract right side of condition\n";
-            code += "BZ " + labelDest + " ;; Branch to destination label if zero\n";
+            if (labelDest.startsWith("__asm")) {
+                //code += "JZ " + labelDest + " ;; Branch to destination label if zero\n";
+            } else {
+                code += "BZ " + labelDest + " ;; Branch to destination label if zero\n";
+            }
             //codeSection.add("JMP " + elseLabel);
         } else if (condition.contains("!=")) {
-            String[] parts = condition.split("!=");
             code += "LDA " + parts[0].trim() + " ;; Load left side of condition\n";
             code += "SUB " + parts[1].trim() + " ;; Subtract right side of condition\n";
-            code += "BNZ " + labelDest + " ;; Branch to destination label if not zero\n";
+            if (labelDest.startsWith("__asm")) {
+                //code += "JNZ " + labelDest + " ;; Branch to destination label if not zero\n";
+            } else {
+                code += "BNZ " + labelDest + " ;; Branch to destination label if not zero\n";
+            }
             //codeSection.add("JMP " + elseLabel);
         } else if (condition.contains("<")) {
-            String[] parts = condition.split("<");
             code += "LDA " + parts[0].trim() + " ;; Load left side of condition\n";
             code += "SUB " + parts[1].trim() + " ;; Subtract right side of condition\n";
-            code += "BB " + labelDest + " ;; Branch to destination label if less than\n";
+            if (labelDest.startsWith("__asm")) {
+                //code += "JB " + labelDest + " ;; Branch to destination label if less than\n";
+            } else {
+                code += "BB " + labelDest + " ;; Branch to destination label if less than\n";
+            }
             //codeSection.add("JMP " + elseLabel);
         } else if (condition.contains(">")) {
-            String[] parts = condition.split(">");
             code += "LDA " + parts[0].trim() + " ;; Load right side of condition\n";
             code += "SUB " + parts[1].trim() + " ;; Subtract left side of condition\n";
-            code += "BNB " + labelDest + " ;; Branch to destination label if greater than\n";
+            if (labelDest.startsWith("__asm")) {
+                //code += "JNB " + labelDest + " ;; Branch to destination label if greater than\n";
+            } else {
+                code += "BNB " + labelDest + " ;; Branch to destination label if greater than\n";
+            }
             //codeSection.add("JMP " + elseLabel);
         } else if (condition.contains("<=")) {
-            String[] parts = condition.split("<=");
             code += "LDA " + parts[0].trim() + " ;; Load left side of condition\n";
             code += "SUB " + parts[1].trim() + " ;; Subtract right side of condition\n";
-            code += "BB " + labelDest + " ;; Branch to destination label if less than or equal\n";
+            if (labelDest.startsWith("__asm")) {
+                //code += "JB " + labelDest + " ;; Branch to destination label if less than or equal\n";
+            } else {
+                code += "BB " + labelDest + " ;; Branch to destination label if less than or equal\n";
+            }
             //codeSection.add("JMP " + elseLabel);
         } else if (condition.contains(">=")) {
-            String[] parts = condition.split(">=");
             code += "LDA " + parts[0].trim() + " ;; Load right side of condition\n";
             code += "SUB " + parts[1].trim() + " ;; Subtract left side of condition\n";
-            code += "BNB " + labelDest + " ;; Branch to destination label if greater than or equal\n";
+            if (labelDest.startsWith("__asm")) {
+                //code += "JNB " + labelDest + " ;; Branch to destination label if greater than or equal\n";
+            } else {
+                code += "BNB " + labelDest + " ;; Branch to destination label if greater than or equal\n";
+            }
             //codeSection.add("JMP " + elseLabel);
         } else {
             throw new IllegalArgumentException("Condición no soportada: " + condition);
@@ -554,7 +822,8 @@ public class MiniCCompiler {
         //ifBodies.put(ifLabel, Arrays.asList(code.split("\\n")));
         //functionArgs.put(ifLabel, new ArrayList<>()); // No arguments for if statements
         //conditions.put(ifLabel, Arrays.asList(code.split("\\n")));
-        codeSection.add(code);
+        //codeSection.add(code);
+        return code;
     }
 
     private static boolean containsOp(String line) {

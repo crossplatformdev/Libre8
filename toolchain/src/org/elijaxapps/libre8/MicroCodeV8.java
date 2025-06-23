@@ -128,6 +128,8 @@ public class MicroCodeV8 {
     private static final long PTRL = 0x7b00; //Pointer load (indirection to the pointer, once there. is load the next 4 bytes, with the values of registers A, B, C, D)
     private static final long PTRS = 0x7c00; //Pointer store (indirection to the pointer, once there. is store the next 4 bytes, with the values of registers A, B, C, D)
 
+    private static final long OUTT = 0x7d00; //Pointer store (indirection to the pointer, once there. is store the next 4 bytes, with the values of registers A, B, C, D)
+
     private static final long LDR = 0xaa00;
     private static int icuadrant;
 
@@ -212,20 +214,15 @@ public class MicroCodeV8 {
                 jump(icuadrant, JNP);
             }
 
-            if (icuadrant>= Signals.BORROW_FLAG1 && (
-                (icuadrant % (Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
-
-                
-                (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1)) == Signals.PARITY_FLAG0 ||                
-                (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||                
-                
-                (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
-            )) {
+            if (icuadrant >= Signals.BORROW_FLAG1 && ((icuadrant % (Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.BORROW_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.BORROW_FLAG1 + Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0)) {
                 call(icuadrant, BB);
                 notCall(icuadrant, BNB);
                 jump(icuadrant, JB);
@@ -237,20 +234,14 @@ public class MicroCodeV8 {
                 jump(icuadrant, JNB);
             }
 
-            if (icuadrant >= Signals.ZERO_FLAG1 && (
-                (icuadrant % (Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
-                
-                (icuadrant % (Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
-
-
-                (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0                 
-
-            )) {    
+            if (icuadrant >= Signals.ZERO_FLAG1 && ((icuadrant % (Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0)) {
                 notCall(icuadrant, BNZ);
                 call(icuadrant, BZ);
                 notJump(icuadrant, JNZ);
@@ -262,18 +253,14 @@ public class MicroCodeV8 {
                 notJump(icuadrant, JZ);
             }
 
-            if (icuadrant >= Signals.CARRY_FLAG1 && (
-                (icuadrant % Signals.CARRY_FLAG1) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
-                
-                (icuadrant % (Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0 ||
-
-                (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0 ||
-                (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
-            )) {
+            if (icuadrant >= Signals.CARRY_FLAG1 && ((icuadrant % Signals.CARRY_FLAG1) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.CARRY_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1)) == Signals.PARITY_FLAG0
+                    || (icuadrant % (Signals.CARRY_FLAG1 + Signals.ZERO_FLAG1 + Signals.BORROW_FLAG1 + Signals.PARITY_FLAG1)) == Signals.PARITY_FLAG0)) {
                 notCall(icuadrant, BNC);
                 call(icuadrant, BC);
                 notJump(icuadrant, JNC);
@@ -282,7 +269,7 @@ public class MicroCodeV8 {
                 call(icuadrant, BNC);
                 notCall(icuadrant, BC);
                 jump(icuadrant, JNC);
-                notJump(icuadrant, JC);            
+                notJump(icuadrant, JC);
             }
 
             createMOVtoMem(icuadrant, MOV_AMem, Signals.AMEM);
@@ -325,6 +312,7 @@ public class MicroCodeV8 {
             createPTRL(icuadrant, PTRL);
             createPTRS(icuadrant, PTRS);
 
+            createOUTtelnet(icuadrant, OUTT,0);
         }
 
         saveToFile("./output/microcode.hex", dump());
@@ -416,12 +404,7 @@ public class MicroCodeV8 {
     private static void createINput(long icuadrant, long instruction, boolean withEcho) throws Exception {
         setOffset(instruction, icuadrant);
         fetch();
-
-        write(Signals.KBI + Signals.MEMA + Signals.HALT);
-
-        if (withEcho) {
-            write(Signals.AMEM + Signals.KBO);
-        }
+        write(Signals.KBI + Signals.MEMA + Signals.HALT + (withEcho ? Signals.KBO + Signals.COUT: 0));
         write(Signals.clpcr);
     }
 
@@ -643,9 +626,10 @@ public class MicroCodeV8 {
         setOffset(instruction, icuadrant);
         fetch();
 
+        //write(Signals.CMM);
         bit24Indirection(true, false, true, Signals.MEMA + Signals.RO);
 
-        write(Signals.CMM);
+        //write(Signals.CMM);
         /* 
 		write(Signals.SHIN + Signals.LR0);
 		write(Signals.SHIN + Signals.LR2);
@@ -661,6 +645,13 @@ public class MicroCodeV8 {
         setOffset(instruction, icuadrant);
         fetch();
         write(Signals.COUT + dMEM + Signals.ALU_EOUT); // Something Failed Here...s
+        write(Signals.clpcr);
+    }
+
+    private static void createOUTtelnet(long icuadrant, long instruction, long dMEM) throws Exception {
+        setOffset(instruction, icuadrant);
+        fetch();
+        write(Signals.COUT + Signals.MEMA + Signals.KBO); // Something Failed Here...s
         write(Signals.clpcr);
     }
 
@@ -780,27 +771,28 @@ public class MicroCodeV8 {
 
             // We should, first of all, let the breadcrumb.
             // That will let us make use of REG A.
-            if (withJumpTo) {
-                write(Signals.CO);
-                write(Signals.SHOUT + Signals.LR0 + Signals.LRW);
-                write(Signals.SHOUT + Signals.LR2 + Signals.LRW);
-                write(Signals.SHOUT + Signals.LR0 + Signals.LR2 + Signals.LRW);
-                write(Signals.SHOUT + Signals.LRW);
+        }
 
-                //write(Signals.LRW);
-                // AFTER! a Push, we have to increment Stack polonger...
-                write(Signals.CPP);
+        if (withJumpTo) {
+            write(Signals.CO);
+            write(Signals.SHOUT + Signals.LR0 + Signals.LRW);
+            write(Signals.SHOUT + Signals.LR2 + Signals.LRW);
+            write(Signals.SHOUT + Signals.LR0 + Signals.LR2 + Signals.LRW);
+            write(Signals.SHOUT + Signals.LRW);
 
-                // pop8b(Signals.MEMA, Signals.LR0 + Signals.LRS);
-            }
+            //write(Signals.LRW);
+            // AFTER! a Push, we have to increment Stack polonger...
+            write(Signals.CPP);
 
-            write(Signals.JMP + Signals.RO);
-            write(Signals.CO + Signals.MI);
+            // pop8b(Signals.MEMA, Signals.LR0 + Signals.LRS);
+        }
 
-            for (long op : operations) {
-                // Write the operation after the indirection.
-                write(op);
-            }
+        write(Signals.JMP + Signals.RO);
+        write(Signals.CO + Signals.MI);
+
+        for (long op : operations) {
+            // Write the operation after the indirection.
+            write(op);
         }
 
         // Here we must copy back from the Stack to the J (Program counter)

@@ -1,7 +1,3 @@
-lesser 006f0000h ;; Function offset
-equal 006ec000h ;; Function offset
-greater 006e8000h ;; Function offset
-main 006e4000h ;; Function offset
 ;;;;;;;;;;;;;;;
 ;; DATA BEGIN ;;
 ;;;;;;;;;;;;;;;
@@ -268,118 +264,40 @@ _ff 000011feh ff
 ;;;;;;;;;;;;;;;
 ;; GLYPHS END ;;
 ;;;;;;;;;;;;;;;
-
 ;;;;;;;;;;;;;;;
 ;; VARIABLES ;;
 ;;;;;;;;;;;;;;;
-a 001f0000h 30 ;; variable initialized
-b 001effffh 35 ;; variable initialized
-gt 001efffeh 3e ;; variable initialized
-lt 001efffdh 3c ;; variable initialized
-eq 001efffch 3d ;; variable initialized
-
 ;;;;;;;;;;;;;;;
 ;; VARIABLES END ;;
 ;;;;;;;;;;;;;;;
-
 ;;;;;;;;;;;;;;;
 ;; STRINGS ;;
 ;;;;;;;;;;;;;;;
-
 ;;;;;;;;;;;;;;;
 ;; STRINGS END ;;
 ;;;;;;;;;;;;;;;
-
 ;;;;;;;;;;;;;;;
 ;; FUNCTIONS ;;
 ;;;;;;;;;;;;;;;
-lesser 006f0000h ;; function offset
-equal 006ec000h ;; function offset
-greater 006e8000h ;; function offset
-main 006e4000h ;; function offset
-
+main 006f0000h                  ;;  function offset
 ;;;;;;;;;;;;;;;
 ;; DATA END ;;
 ;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
 ;; CODE BEGIN ;;
-;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
 .code
 B main ;; Branch to main function
-
-;;;;;;;;;;;;;;;
-;; BEGIN lesser ;;
-.lesser
-LDA a // Load the value of 'a' into the accumulator
-OUTA ;; Inline mnemonic
-LDA lt // Load the greater than symbol into the accumulator
-OUTA ;; Inline mnemonic
-LDA b // Load the value of 'b' into the accumulator
-OUTA ;; Inline mnemonic
-LDA _0a // Load the new line character into the accumulator
-OUTA ;; Inline mnemonic
-BX _00 ;; Return from function
-;; End of block
-;;;;;;;;;;;;;;;
-;; END lesser ;;
-;;;;;;;;;;;;;;;
-;; BEGIN equal ;;
-.equal
-LDA a // Load the value of 'a' into the accumulator
-OUTA ;; Inline mnemonic
-LDA eq // Load the equal to symbol into the accumulator
-OUTA ;; Inline mnemonic
-LDA b // Load the value of 'b' into the accumulator
-OUTA ;; Inline mnemonic
-LDA _0a // Load the new line character into the accumulator
-OUTA ;; Inline mnemonic
-BX _00 ;; Return from function
-;; End of block
-;;;;;;;;;;;;;;;
-;; END equal ;;
-;;;;;;;;;;;;;;;
-;; BEGIN greater ;;
-.greater
-LDA a // Load the value of 'a' into the accumulator
-OUTA ;; Inline mnemonic
-LDA gt // Load the less than symbol into the accumulator
-OUTA ;; Inline mnemonic
-LDA b // Load the value of 'b' into the accumulator
-OUTA ;; Inline mnemonic
-LDA _0a // Load the new line character into the accumulator
-OUTA ;; Inline mnemonic
-BX _00 ;; Return from function
-;; End of block
-;;;;;;;;;;;;;;;
-;; END greater ;;
+JMP 00000000h ;; Jump to end of code section (placeholder for main function)
 ;;;;;;;;;;;;;;;
 ;; BEGIN main ;;
 .main
-DECE // Read input character into 'a'
-STA a // Store the value in global variable 'a'
-;; End of block
-;; If condition: a < b
-;; Conditional code for: a < b 
-LDA a ;; Load left side of condition
-SUB b ;; Subtract right side of condition
-BB lesser ;; Branch to destination label if less than
-
-;; If condition: a == b
-;; Conditional code for: a == b 
-LDA a ;; Load left side of condition
-SUB b ;; Subtract right side of condition
-BZ equal ;; Branch to destination label if zero
-
-;; Else block code for: greater
-
-;; Else condition for: greater
-LDA b ;; Load right side of condition
-SUB a ;; Subtract left side of condition
-BB greater ;; Branch to else label if greater than or equal
-;; End of block
-JMP main // Jump back to the start of the main function
-;; End of block
-BX _00 ;; Return from main
+LDA _ff                         ;;  Load the value 255 into the accumulator
+ADD _01                         ;;  Add 1 to the accumulator
+LDA _00                         ;;  Load the value 0 into the accumulator
+SUB _01                         ;;  Subtract 1 from the accumulator
+                                ;;  End of block
+BX _00                          ;;  Return from main
 ;;;;;;;;;;;;;;;
 ;; END main ;;

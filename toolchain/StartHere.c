@@ -1,69 +1,120 @@
-char a = '0'; // Global variable
-char b = '5'; // Another global variable
+int  zero = 0;  // Global variable for zero
 
-char gt = '>'; // Global variable for greater than
-char lt = '<'; // Global variable for less than
-char eq = '='; // Global variable for equal to
+char e = 'e';   // Global variable for greater than
+char r = 'r';   // Global variable for less than
+char o = 'o';   // Global variable for equal to
 
-int lesser(){
+
+int loop_foo = 255; // Global variable for loop control (counter)
+int loop_bar = 10; // Global variable for loop control (maximum iterations)
+int loop_baz = 1; // Global variable for loop control (step size)
+int error(){
     __asm {
-        LDA a // Load the value of 'a' into the accumulator
+        LDA e   ;; Load the 'e' character into the accumulator
         OUTA
-        LDA lt // Load the greater than symbol into the accumulator
+        LDA r   ;; Load the 'r' character into the accumulator
         OUTA
-        LDA b // Load the value of 'b' into the accumulator
+        LDA o   ;; Load the 'o' character into the accumulator
         OUTA
-        LDA _0a // Load the new line character into the accumulator
+        LDA r   ;; Load the 'r' character into the accumulator
+        OUTA
+        LDA o   ;; Load the 'o' character into the accumulator
+        OUTA
+        LDA r   ;; Load the 'r' character into the accumulator
+        OUTA
+        LDA _0a ;; Load the new line character into the accumulator
         OUTA
         BX _00
     }
 }
 
-
-int equal(){
+int output() {
     __asm {
-        LDA a // Load the value of 'a' into the accumulator
-        OUTA
-        LDA eq // Load the equal to symbol into the accumulator
-        OUTA
-        LDA b // Load the value of 'b' into the accumulator
-        OUTA
-        LDA _0a // Load the new line character into the accumulator
-        OUTA
+        LDA a   ;; Load the character into the accumulator
+        OUTA    ;; Output the character
+        BX _00  ;; Return to the calling function
+    }
+}
+
+int loop_break() {
+    __asm {
+        BX _00  ;; Return to the calling function
+    }
+}
+
+int for_func() {
+    // Increment the loop counter
+    loop_foo = loop_foo + loop_baz;     
+
+    if(loop_foo < loop_bar) {
+        __asm {
+            BB loop_function   ;; Jump to output if the condition is met
+            JB for_func        ;; Jump back to the start of for_func
+        }      
+    } else {
+        __asm {
+            JNB loop_break ;; Jump to loop_break if the condition is not met
+        }
+    }
+    
+    // Return from the function
+    return 0;
+}
+
+int do_while_func() {
+    __asm {
+        LDA loop_bar
+        SUB loop_foo
+        BNZ loop_body
+
+        LDA loop_foo
+        ADD loop_baz
+        STA loop_foo
+
+        LDA loop_bar
+        SUB loop_foo      
+        JNZ do_while_func        
         BX _00
     }
 }
 
-int greater(){
+int while_func() {
     __asm {
-        LDA a // Load the value of 'a' into the accumulator
-        OUTA
-        LDA gt // Load the less than symbol into the accumulator
-        OUTA
-        LDA b // Load the value of 'b' into the accumulator
-        OUTA
-        LDA _0a // Load the new line character into the accumulator
-        OUTA
+        LDA loop_bar
+        SUB loop_foo
+        BNZ loop_body
+
+        LDA loop_foo
+        ADD loop_baz
+        STA loop_foo
+
+        LDA loop_bar
+        SUB loop_foo
+        JNZ while_func
         BX _00
     }
+}
+
+int loop(){
+    for(int i = 0; i < 10; i++) {
+        output(); // Call output function
+    }
+
+    return 0; // Return from the loop function
 }
 
 int main() {
 
     __asm {
-        DECE // Read input character into 'a'
-        STA a // Store the value in global variable 'a'
+        DEC     ;; Read input character into 'a'
+        STA a   ;; Store the value in global variable 'a'
     }
-
-    if (a < b) {
-        lesser();
-    } else if (a == b) {
-        equal();
-    } else {
-        greater();
+    
+    for(int i = 0; i < 10; i++) {
+        output(); // Call output function
     }
 
     __asm {
-        JMP main // Jump back to the start of the main function
+        JMP main  ;; Jump back to the start of main
     }
 }

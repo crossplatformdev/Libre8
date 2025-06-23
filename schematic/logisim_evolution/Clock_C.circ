@@ -9,6 +9,7 @@
     <tool name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
+      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </tool>
     <tool name="Probe">
@@ -87,6 +88,12 @@
       <a name="behavior" val="pulldown"/>
       <a name="label" val="PULSE"/>
     </comp>
+    <comp lib="0" loc="(370,110)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="NO"/>
+      <a name="type" val="output"/>
+    </comp>
     <comp lib="0" loc="(370,160)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -111,6 +118,8 @@
     <wire from="(220,150)" to="(250,150)"/>
     <wire from="(220,180)" to="(300,180)"/>
     <wire from="(250,150)" to="(260,150)"/>
+    <wire from="(260,110)" to="(260,130)"/>
+    <wire from="(260,110)" to="(370,110)"/>
     <wire from="(290,140)" to="(300,140)"/>
     <wire from="(350,160)" to="(360,160)"/>
     <wire from="(360,160)" to="(370,160)"/>

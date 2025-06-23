@@ -124,6 +124,8 @@ public class AssemblerV8 {
     private static final long PTRL = 0x7b;
     private static final long PTRS = 0x7c;
 
+    private static final long OUTT = 0x7d;
+
     private static final long LDR = 0xaa;
 
     // Memory Constants
@@ -586,6 +588,10 @@ public class AssemblerV8 {
                 break;
             case "LDR":
                 instructionHex = Long.toHexString(LDR);
+                break;
+            case "OUTT":
+                instructionHex = Long.toHexString(OUTT);
+                isSingleToken = true;
                 break;
             default:
                 throw new Exception("Unknown mnemonic: " + instruction + " in line " + counter);
