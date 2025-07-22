@@ -1,4 +1,4 @@
-package org.elijaxapps.libre8;
+package org.elijaxapps.libre8.c;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

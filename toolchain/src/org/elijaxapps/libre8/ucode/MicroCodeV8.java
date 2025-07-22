@@ -75,7 +75,7 @@ public class MicroCodeV8 {
     private static final long IMUL = 0x6200;
     private static final long IDIV = 0x6d00;
 
-    private static final long POKE = 0x9900;
+    private static final long POKE = 0x9700;
     private static final long POKX = 0x9a00;
     private static final long POKY = 0x9b00;
     private static final long PXYD = 0x9c00;
@@ -129,6 +129,7 @@ public class MicroCodeV8 {
     private static final long PTRS = 0x7c00; //Pointer store (indirection to the pointer, once there. is store the next 4 bytes, with the values of registers A, B, C, D)
 
     private static final long OUTT = 0x7d00; //Output to terminal
+    private static final long OUTM = 0x7e00; //Output to terminal
 
     private static final long LDR = 0xaa00;
     private static int icuadrant;
@@ -148,8 +149,9 @@ public class MicroCodeV8 {
             System.out.println("Cuadrant count: " + ccount + " | Cuadrant: " + icuadrant);
             ccount += 1;
 
-            push24b(icuadrant, PSAX);
-            pop24b(icuadrant, POPX);
+            push8b(icuadrant, PSAX, Signals.AMEM + Signals.RW);
+            pop8b(icuadrant, POPX, Signals.MEMA);  
+
             pushRst(icuadrant, RST);
             popRst(icuadrant, PST);
             createLD(icuadrant, LD, Signals.MEMA);
@@ -290,6 +292,7 @@ public class MicroCodeV8 {
             createPTRL(icuadrant, PTRL);
             createPTRS(icuadrant, PTRS);
             createOUTtelnet(icuadrant, OUTT,0);
+            createOUTtelnetM(icuadrant, OUTM,0);
         }
 
         saveToFile("./output/microcode.hex", dump());
@@ -337,7 +340,7 @@ public class MicroCodeV8 {
     private static void createPOKE(int icuadrant, long poke, long... operations) throws Exception {
         setOffset(poke, icuadrant);
         fetch();
-        for (int m = 72; m > 0; --m) {
+        for (int m = 256; m > 0; --m) {
             readOneNotWrite();
             if (m != 1) {
                 write(Signals.RO + Signals.REG_C + Signals.POKE);
@@ -375,15 +378,11 @@ public class MicroCodeV8 {
     }
 
     private static void pushProgramCounterToStack() {
-        push8b(Signals.AMEM, Signals.LR0);
-        write(Signals.CO);
-        write(Signals.CO + Signals.REG_A + Signals.LD);
-        write(Signals.REG_A + Signals.O0 + Signals.LR0);
-        write(Signals.CO + Signals.REG_A + Signals.LD);
-        write(Signals.REG_A + Signals.O0 + Signals.LR2);
-        write(Signals.CO + Signals.REG_A + Signals.LD);
-        write(Signals.REG_A + Signals.O0 + Signals.LR0 + Signals.LR2);
-        pop8b(Signals.MEMA, Signals.LR0);
+        write(Signals.CMM + Signals.LRS);
+        write(Signals.AMEM + Signals.LR0 + Signals.LRW + Signals.LRS);
+        write(Signals.BMEM + Signals.LR2 + Signals.LRW + Signals.LRS);
+        write(Signals.CMEM + Signals.LR0 + Signals.LR2 + Signals.LRW + Signals.LRS);
+        write(Signals.clpcr);
     }
 
     private static void createMov_SP_BP(long icuadrant) throws Exception {
@@ -431,9 +430,72 @@ public class MicroCodeV8 {
         write(Signals.clpcr);
     }
 
-    private static void push8b(long aMEM, long lR0) {
-        write(Signals.CMM + Signals.LRS);
-        write(aMEM + lR0);
+    private static void push8b(long icuadrant, long ins, long... operations) throws Exception {
+        setOffset(ins, icuadrant);
+        fetch();
+        readOneNotWrite();
+        //write(Signals.RO + Signals.MEMA);
+        //write(Signals.LRS + Signals.LRW + Signals.LR0 + Signals.AMEM);
+        readOneNotWrite();
+        write(Signals.RO + Signals.MEMA);
+        write(Signals.LRS + Signals.LRW + Signals.LR0 + Signals.AMEM);
+        readOneNotWrite();
+        write(Signals.RO + Signals.MEMA);
+        write(Signals.LRS + Signals.LRW + Signals.LR2 + Signals.AMEM);
+        readOneNotWrite();
+        write(Signals.RO + Signals.MEMA);
+        write(Signals.LRS + Signals.LRW + Signals.LR0 + Signals.LR2 + Signals.AMEM);
+
+        write(Signals.LRS + Signals.CPP);
+    }
+
+    private static void pop8b(long icuadrant, long ins, long operation) throws Exception {
+        setOffset(ins, icuadrant);
+        fetch();
+        write(Signals.CMM);
+
+        write(Signals.MEMB + Signals.LRS + Signals.LR0);
+        write(Signals.MEMC + Signals.LRS + Signals.LR2);
+        write(Signals.MEMD + Signals.LRS + Signals.LR0 + Signals.LR2);
+        // Shift in the values to the registers
+        write(Signals.SHIN + Signals.DMEM);
+        write(Signals.SHIN + Signals.CMEM);
+        write(Signals.SHIN + Signals.BMEM);
+        // PLACEHOLDER2
+        write(Signals.SHIN + Signals.BMEM);
+
+        write(Signals.CO);
+        // Shift in the values to the registers
+        write(Signals.SHOUT + Signals.LRS + Signals.LR0 + Signals.LRW);
+        write(Signals.SHOUT + Signals.LRS + Signals.LR2 + Signals.LRW);
+        write(Signals.SHOUT + Signals.LRS + Signals.LR0 + Signals.LR2 + Signals.LRW);
+        write(Signals.SHOUT + Signals.LRS + Signals.LRW);
+
+        //write(Signals.LRW);
+        // AFTER! a Push, we have to increment Stack polonger...
+        write(Signals.CPP);
+
+  
+        write(Signals.JMP + Signals.RO);
+        write(Signals.CO + Signals.MI);
+
+        write(operation);
+       
+
+        // Here we must copy back from the Stack to the J (Program counter)
+        // At least, the counter wise operation is direct, as we do not need
+        // LRW signal ^^
+
+        // BEFORE a pop, we have to Decrement Stack polonger...
+        write(Signals.CMM);
+
+        write(Signals.SHIN + Signals.LR0);
+        write(Signals.SHIN + Signals.LR2);
+        write(Signals.SHIN + Signals.LR0 + Signals.LR2);
+        write(Signals.SHIN + Signals.LR0 + Signals.LR2);
+
+        write(Signals.JMP + Signals.RO);
+        write(Signals.CO + Signals.MI);
     }
 
     private static void pop24b(long icuadrant, long ins) throws Exception {
@@ -455,11 +517,6 @@ public class MicroCodeV8 {
         write(Signals.SHIN);
         write(Signals.SHIN);
         write(Signals.SHIN);
-        write(Signals.CPP + Signals.LRS);
-    }
-
-    private static void pop8b(long mEMA, long lR0) {
-        write(mEMA + lR0);
         write(Signals.CPP + Signals.LRS);
     }
 
@@ -562,6 +619,13 @@ public class MicroCodeV8 {
         write(Signals.COUT + Signals.MEMA + Signals.KBO); // Something Failed Here...s
         write(Signals.clpcr);
     }
+    
+    private static void createOUTtelnetM(long icuadrant, long instruction, long dMEM) throws Exception {
+        setOffset(instruction, icuadrant);
+        fetch();
+        write(Signals.MEMA + Signals.KBO); // Something Failed Here...s
+        write(Signals.clpcr);
+    }
 
     private static void createLDDirect(long icuadrant, long instruction, long operation) throws Exception {
         setOffset(instruction, icuadrant);
@@ -624,7 +688,7 @@ public class MicroCodeV8 {
         write(Signals.clpcr);
     }
 
-    private static void bit24Indirection(boolean withIndirection, boolean withJumpTo, boolean withReturn,
+    private static void bit24Indirection(boolean withPush, boolean withJumpTo, boolean withPop,
             long... operations) throws Exception {
         // We're going to rewrite this funtion ----
 
@@ -646,11 +710,12 @@ public class MicroCodeV8 {
         // A) Instruction have been fetch and RAM polonger is at it.
         // B) Next 3 bytes are an address
         // C) A operation is need to be done on destination
-        if (withIndirection) {
+        if (withPush) {
             // Copy the RAM cell content to a register. Keep it wise. WE NEED 3 because cant
             // do PC operations mixed with RAM			
             readOneNotWrite();
             // PLACEHOLDER
+            // write(Signals.RO + Signals.MEMA);
             readOneNotWrite();
             // END PLACEHOLDER
             write(Signals.RO + Signals.MEMB);
@@ -696,7 +761,7 @@ public class MicroCodeV8 {
         // Here we must copy back from the Stack to the J (Program counter)
         // At least, the counter wise operation is direct, as we do not need
         // LRW signal ^^
-        if (withReturn) {
+        if (withPop) {
 
             // BEFORE a pop, we have to Decrement Stack polonger...
             write(Signals.CMM);
@@ -765,7 +830,7 @@ public class MicroCodeV8 {
     }
 
     private static long clear(int address) throws Exception {
-        if ((address <= POKE + 2 || address > POKE + 255)) {
+        if ((address <= POKE + 2 || address > POKE + 512)) {
             fetch();
         }
         return address;

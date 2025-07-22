@@ -64,7 +64,7 @@ public class MicroCodeV8GPT {
     private static final long ISUB = 0x6500;
     private static final long IMUL = 0x6200;
     private static final long IDIV = 0x6d00;
-    private static final long POKE = 0x9900;
+    private static final long POKE = 0x9700;
     private static final long POKX = 0x9a00;
     private static final long POKY = 0x9b00;
     private static final long PXYD = 0x9c00;
@@ -108,6 +108,7 @@ public class MicroCodeV8GPT {
     private static final long PTRL = 0x7b00;
     private static final long PTRS = 0x7c00;
     private static final long LDR = 0xaa00;
+    private static final long OUTT = 0x7d00; 
 
     private static int icuadrant;
 
@@ -120,8 +121,8 @@ public class MicroCodeV8GPT {
                 + Signals.LESSER_FLAG1 + Signals.GREATER_FLAG1 + Signals.EQUAL_FLAG1);
         for (icuadrant = 0; icuadrant <= max; icuadrant += Signals.PARITY_FLAG1) {
             // All atomic operations and stubs preserved
-            push24b(icuadrant, PSAX);
-            pop24b(icuadrant, POPX);
+            push8b(icuadrant, PSAX, Signals.AMEM + Signals.RW);
+            pop8b(icuadrant, POPX, Signals.MEMA + Signals.RO);
             pushRst(icuadrant, RST);
             popRst(icuadrant, PST);
             createLD(icuadrant, LD, Signals.MEMA);
@@ -311,7 +312,7 @@ public class MicroCodeV8GPT {
     private static void createPOKE(int icuadrant, long poke, long... operations) throws Exception {
         setOffset(poke, icuadrant);
         fetch();
-        for (int m = 72; m > 0; --m) {
+        for (int m = 256; m > 0; --m) {
             readOneNotWrite();
             if (m != 1) {
                 write(Signals.RO + Signals.REG_C + Signals.POKE);
@@ -350,15 +351,11 @@ public class MicroCodeV8GPT {
     }
 
     private static void pushProgramCounterToStack() {
-        push8b(Signals.AMEM, Signals.LR0);
-        write(Signals.CO);
-        write(Signals.CO + Signals.REG_A + Signals.LD);
-        write(Signals.REG_A + Signals.O0 + Signals.LR0);
-        write(Signals.CO + Signals.REG_A + Signals.LD);
-        write(Signals.REG_A + Signals.O0 + Signals.LR2);
-        write(Signals.CO + Signals.REG_A + Signals.LD);
-        write(Signals.REG_A + Signals.O0 + Signals.LR0 + Signals.LR2);
-        pop8b(Signals.MEMA, Signals.LR0);
+        write(Signals.CMM + Signals.LRS);
+        write(Signals.AMEM + Signals.LR0 + Signals.LRW + Signals.LRS);
+        write(Signals.BMEM + Signals.LR2 + Signals.LRW + Signals.LRS);
+        write(Signals.CMEM + Signals.LR0 + Signals.LR2 + Signals.LRW + Signals.LRS);
+        write(Signals.clpcr);
     }
 
     private static void createMov_SP_BP(long icuadrant) throws Exception {
@@ -406,9 +403,12 @@ public class MicroCodeV8GPT {
         write(Signals.clpcr);
     }
 
-    private static void push8b(long aMEM, long lR0) {
-        write(Signals.CMM + Signals.LRS);
-        write(aMEM + lR0);
+    private static void push8b(long icuadrant, long ins, long operation) throws Exception {
+        createST(icuadrant, ins, operation);
+    }
+
+    private static void pop8b(long icuadrant, long ins, long operation) throws Exception {
+        createLD(icuadrant, ins, operation);
     }
 
     private static void pop24b(long icuadrant, long ins) throws Exception {
@@ -433,10 +433,6 @@ public class MicroCodeV8GPT {
         write(Signals.CPP + Signals.LRS);
     }
 
-    private static void pop8b(long mEMA, long lR0) {
-        write(mEMA + lR0);
-        write(Signals.CPP + Signals.LRS);
-    }
 
     private static void notCall(long icuadrant, long instruction) throws Exception {
         notJump(icuadrant, instruction);
@@ -691,7 +687,7 @@ public class MicroCodeV8GPT {
     }
 
     private static long clear(int address) throws Exception {
-        if ((address <= POKE + 2 || address > POKE + 255)) {
+        if ((address <= POKE + 2 || address > POKE + 512)) {
             fetch();
         }
         return address;

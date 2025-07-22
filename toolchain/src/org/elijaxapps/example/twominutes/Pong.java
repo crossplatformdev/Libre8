@@ -1,15 +1,12 @@
-package org.elijaxapps.example;
+package org.elijaxapps.example.twominutes;
 
-import org.elijaxapps.libre8.AssemblerV8;
-import org.elijaxapps.libre8.MiniCCompiler;
+import org.elijaxapps.libre8.as.AssemblerV8GPT;
+import org.elijaxapps.libre8.c.MiniCCompilerGPT;
 
 public class Pong {
 
     public static void main(String[] args) throws Exception {
-        String[] commands = {
-            "PongGPT.c"
-        };
-        MiniCCompiler.run("PongGPT.c");
-        AssemblerV8.run("PongGPT.as");
+        MiniCCompilerGPT.run("C_src/Pong.c");
+        AssemblerV8GPT.run("main.as");
     }
 }

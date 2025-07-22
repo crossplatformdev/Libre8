@@ -1,4 +1,4 @@
-package org.elijaxapps.libre8;
+package org.elijaxapps.libre8.as;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -65,7 +65,7 @@ public class AssemblerV8GPT {
     private static final long IDIV = 0x6d;
 
     // I/O Instructions
-    private static final long POKE = 0x99;
+    private static final long POKE = 0x97;
     private static final long POKX = 0x9a;
     private static final long POKY = 0x9b;
     private static final long PXYD = 0x9c;
@@ -121,6 +121,7 @@ public class AssemblerV8GPT {
     private static final long PTRL = 0x7b;
     private static final long PTRS = 0x7c;
     private static final long OUTT = 0x7d;
+    private static final long OUTM = 0x7e;
 
     private static final long LDR = 0xaa;
 
@@ -271,7 +272,7 @@ public class AssemblerV8GPT {
     }
 
     private static int parseInstruction(String line, int counter) throws Exception {
-        String patternString = "^([a-zA-Z0-9]{1,4})\\s?([0-9A-Fa-f]{8,72}h?|[\\w_]{1,256}|.*)$";
+        String patternString = "^([a-zA-Z0-9]{1,4})\\s?([0-9A-Fa-f]{8,256}h?|[\\w_]{1,256}|.*)$";
         Pattern pattern = Pattern.compile(patternString);
         if (line == null || line.isEmpty()) {
             return offset;
@@ -389,6 +390,7 @@ public class AssemblerV8GPT {
             case "PTRS": instructionHex = Long.toHexString(PTRS); break;
             case "LDR": instructionHex = Long.toHexString(LDR); break;
             case "OUTT": instructionHex = Long.toHexString(OUTT); isSingleToken= true; break;
+            case "OUTM": instructionHex = Long.toHexString(OUTM); isSingleToken = true; break;
             default: throw new Exception("Unknown mnemonic: " + instruction + " in line " + counter);
         }
 
@@ -405,7 +407,7 @@ public class AssemblerV8GPT {
                     mem0[offset++] = operand.substring(i * 2, (i + 1) * 2);
                 }
             } else {
-                Matcher mByte = Pattern.compile("([0-9A-Fa-f]{2}){1,72}").matcher(operand);
+                Matcher mByte = Pattern.compile("([0-9A-Fa-f]{2}){1,256}").matcher(operand);
                 if (mByte.matches()) {
                     for (int i = 0; i < operand.length(); i += 2) {
                         mem0[offset++] = operand.substring(i, i + 2);

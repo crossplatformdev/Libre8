@@ -1,12 +1,11 @@
 package org.elijaxapps.example;
 
-import org.elijaxapps.old.CompilerV8;
+import org.elijaxapps.libre8.as.AssemblerV8GPT;
+import org.elijaxapps.libre8.c.MiniCCompilerGPT;
 
 public class C_example {
-    public static void main(String[] args) throws Exception {
-        String[] commands = {
-            "C_example.c"
-        };
-        CompilerV8.run(commands);
+    public static void main(String[] args) throws Exception {        
+        MiniCCompilerGPT.run("C_example.c");
+        AssemblerV8GPT.run("main.as");
     }
 }

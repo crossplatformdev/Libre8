@@ -1,7 +1,7 @@
 package org.elijaxapps.example;
 
-import org.elijaxapps.libre8.AssemblerV8;
-import org.elijaxapps.libre8.MiniCCompiler;
+import org.elijaxapps.libre8.as.AssemblerV8;
+import org.elijaxapps.libre8.c.MiniCCompiler;
 
 public class StartHere {
 

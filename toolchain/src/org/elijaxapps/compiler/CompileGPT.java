@@ -1,7 +1,7 @@
-package org.elijaxapps.example;
+package org.elijaxapps.compiler;
 
-import org.elijaxapps.libre8.AssemblerV8GPT;
-import org.elijaxapps.libre8.MiniCCompilerGPT;
+import org.elijaxapps.libre8.as.AssemblerV8GPT;
+import org.elijaxapps.libre8.c.MiniCCompilerGPT;
 
 public class CompileGPT {
     public static void main(String[] args) throws Exception {        

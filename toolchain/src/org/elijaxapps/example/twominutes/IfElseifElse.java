@@ -1,12 +1,12 @@
-package org.elijaxapps.example;
+package org.elijaxapps.example.twominutes;
 
-import org.elijaxapps.libre8.AssemblerV8;
-import org.elijaxapps.libre8.MiniCCompiler;
+import org.elijaxapps.libre8.as.AssemblerV8GPT;
+import org.elijaxapps.libre8.c.MiniCCompilerGPT;
 
 public class IfElseifElse {
 
     public static void main(String[] args) throws Exception {
-        MiniCCompiler.run("IfElseifElse.c");
-        AssemblerV8.run("main.as");
+        MiniCCompilerGPT.run("C_src/IfElseifElse.c");
+        AssemblerV8GPT.run("main.as");
     }
 }

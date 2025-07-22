@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-import org.elijaxapps.libre8.AssemblerV8;
+import org.elijaxapps.libre8.as.AssemblerV8;
 
 /**
  * Libre 8 C Compiler V3. Generates .as, using Libre 8 assembly language. (refer

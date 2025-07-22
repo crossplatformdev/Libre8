@@ -40,6 +40,16 @@ int writeUser(){
     }
 }
 
+int waitForInput() {
+    __asm {
+        
+        OUTM    ;; Output the prompt
+        SUB _02
+        JB waitForInput ;; Wait for input character
+        BX _00
+    }
+}
+
 int writeChat(){
     __asm {
         LDA _0a
@@ -68,7 +78,7 @@ int writeChat(){
         LDA prompt
         OUT     ;; Output '>'
 
-        DEC
+        B waitForInput
         BX _00
     }
 }
@@ -106,6 +116,6 @@ int main() {
     printResponse();
     __asm {
         JMP main
-    }
+    } 
     return 0;
 }
