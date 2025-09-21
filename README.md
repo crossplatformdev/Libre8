@@ -1,9 +1,10 @@
 # #Libre8
 
 Libre8 is an educational, open-source 8-bit CPU and runtime environment, designed to be programmed in C, C++, and Assembly, and simulated in Logisim Evolution. It features a custom instruction set and a graphics subsystem.
-![Circuit Image](https://github.com/ElijaxApps/Libre-8/raw/main/CircuitImage.png)
+
 
 ---
+<img width="1555" height="1394" alt="libre8" src="https://github.com/user-attachments/assets/1beca0a0-39fe-497e-b1db-67b81f8dfe3d" />
 
 ## Table of Contents
 - Features
