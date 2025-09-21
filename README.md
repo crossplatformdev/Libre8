@@ -1,179 +1,331 @@
 # #Libre8
-An 8 bit OpenSource full computer
 
-This is <b>Libre 8</b>, an <b>8 bit OpenSource computer.</b> 
-
-Inspired by the SAP-1 computer (Simplest As Possible). Contains 4 8-bit registers 
-and it is able to address 24-bit memory addresses, having a total ammout
-of 16MB of RAM.
-The designs were made with <b>Logisim</b>, the microcode and the compiler
-are writen in <b>Java</b>. The simulation is able to reach up to 4.1 Khz.
-
+Libre8 is an educational, open-source 8-bit CPU and runtime environment, designed to be programmed in C, C++, and Assembly, and simulated in Logisim Evolution. It features a custom instruction set and a graphics subsystem.
 ![Circuit Image](https://github.com/ElijaxApps/Libre-8/raw/main/CircuitImage.png)
 
-# How to write a program for it: <br />
+---
 
-Currently must be programmed using Assembly like operations.
+## Table of Contents
+- Features
+- Getting Started
+  - Requirements
+  - Directory Structure
+- Compiling and Assembling Programs
+  - Compiling from C/C++
+  - Generating Assembly from Java
+- Running Programs in Logisim
+- Writing Programs for Libre8
+  - Assembly Format and Structure
+  - C/C++ Integration
+- **Full Instruction Set Reference (MicroCodeV8GPT)**
+  - Atomic Opcodes
+  - Extended/Indirect Opcodes
+- Signals, Flags, and Hardware
+- Custom Instructions
+- Example Programs
+- Contributing
+- License
+- References
 
----------------------------------
-| Code token | Meaning | Examples|
-|------------|---------|---------|
-| ;;  | This is a comment. line will be ignored                                                |;;This is a comment|
-| LDA | Basic load A register. Always followed by a variable name or an memory address (up to 24 bit)|LDA one <br />LDA ff0010h|
-| LDB | Same as LDA with B register |
-| LDC | Same as LDA with C register |
-| LDD | Same as LDA with D register |
-| STA |Store contents of register A into the following address memory (also up to 24 bit)     |STA one <br />STA ff0010h|
-| STB | Same as STA with B register |
-| STC | Same as STA with C register |
-| STD | Same as STA with D register |
-| OUTA|Echoes the value of register A to LCD Screen                                           |LDA one <br />OUTA (prints value of variable "one")|
-| OUTB | Same as OUTA with B register |
-| OUTC | Same as OUTA with C register |
-| OUTD | Same as OUTA with D register |
-| DEC |Reads a byte from keyboard and stores in A register. Blocks execution.                                                            | DEC <br/> STA readChar |
-| DECE |Reads a byte from keyboard, echoes it, and stores in A register. Blocks executtion.                                                            | DEC <br/> STA readChar |
-| DECI |Reads a byte from keyboard, echoes it, and stores in A register. Non-blocking                                                            | DEC <br/> STA readChar |
-| ADD |Adds the value of the following address or variable to the contents of register A                              | DEC <br/> ADD _01     |	
-| SUB |Substracts the value of the following address or variable to the contents of register A                        | DEC <br/> SUB _01     |	
-| DIV |Divides the value of the following address or variable to the contents of register A                        | LDA _10 <br /> DIV _02 ;; 5 hex    |	
-| MUL |Divides the value of the following address or variable to the contents of register A                        | LDA _10 <br /> MUL _02 ;; 20 hex     |	
-| JZ  |Jumps to the specified address or to specified address contained within a variable if Zero Flag == 0           | JZ addressToJumpTo, JZ 0000ffh    |
-| JNZ |Jumps to the specified address or to specified address contained within a variable if Zero Flag != 0           | JNZ addressToJumpTo, JNZ 0000ffh  |
-| JC  |Jumps to the specified address or to specified address contained within a variable if Carry Flag == 0          | JC addressToJumpTo,  JC 0000ffh   |
-| JNC |Jumps to the specified address or to specified address contained within a variable if Carry Flag != 0          | JNC addressToJumpTo, JNC 0000ffh  |
-| J   |Jumps always                                                                           | J addressToJumpTo                  |
-| BZ  |Creates a branch (calls a function) if Zero Flag == 0                                  | BZ offsetOfFunction                |
-| BNZ |Creates a branch (calls a function)  if Zero Flag != 0                                 | BNZ offsetOfFunction               |
-| BC  |Creates a branch (calls a function)  Carry Flag == 0                                   | BC offsetOfFunction                |
-| BNC |Creates a branch (calls a function)  if Carry Flag != 0                                | BNC offsetOfFunction               |
-| B   |Creates a branch (calls a function) always it is found                                 | B offsetOfFunction                 |
-| BX  |Returns a value contained in the following address                                     | BX returnValueAddress              |
-| NOP | No operation. Just reads the next operation                                           | NOP                                |
-| HLT | Halts the computer                                                                    | HLT                                |
-| MOV | Limited, not documented support for some MOV operations. SEE THE CODE!!!              | MOV A, C                           |
-| POKE| Render a row of 72 pixels in GPU screen. Requires 144 chars [0-9A-F] as argument.     | POKE 0f0a...<<144>>                |
-| POKX| Set X coordinate on GPU. Is a direct instruction, followed by a byte.                 | POKX 42                            |
-| POKY| Set Y coordinate on GPU. Is a direct instruction, followed by a byte.                 | POKY 42                            |
-| PXYD| Set pixel on X,Y coordinates, of the colour of the next byte. Is a direct instruction, followed by a byte.                 | POKD 42                            |
-| PIKX| Set X coordinate on GPU. Is a Indirect instruction, followed by a byte.                 | PIKX var1                            |
-| PIKY| Set Y coordinate on GPU. Is a Indirect instruction, followed by a byte.                 | PIKY var1                            |
-| PIYD| Set pixel on X,Y coordinates, of the colour of the next byte. Is a Indirect instruction, followed by a byte.                 | PIYD var1                            |
+---
 
+## Features
 
+- Custom 8-bit instruction set, direct/indirect addressing
+- Graphics subsystem: pixel, row, coordinate operations
+- C/C++ and Assembly toolchain
+- Java-based code generators for demos/animations
+- Logisim Evolution simulation
 
-# Example program:
+---
+
+## Getting Started
+
+### Requirements
+
+- Java 8+ (for toolchain/generators)
+- GCC/Clang (for C/C++ programs)
+- Logisim Evolution (for simulation)
+- Python (optional, for conversion scripts)
+
+### Directory Structure
+
 ```
-;; This is a comment
-;; First thing is to write .data, and variables and function offset declaration below.
+toolchain/
+  C_src/           # Example C programs
+  convert_frames.cpp # Frame conversion utility (C++)
+  src/org/elijaxapps/ # Java generators, assembler, microcode
+  example/         # Java "twominutes" demos
+  ...
+README.md
+```
+
+---
+
+## Compiling and Assembling Programs
+
+### Compiling from C/C++
+
+Write your code in C (see `toolchain/C_src/`). Example:
+
+```c
+int main() {
+    // Your logic
+    __asm {
+        LDA a
+        OUT
+        JMP main
+    }
+    return 0;
+}
+```
+
+Compile using:
+
+```bash
+gcc -o MyProgram toolchain/C_src/MyProgram.c
+```
+
+Use the provided Java assembler to convert C output to assembly:
+
+```bash
+java org.elijaxapps.libre8.as.AssemblerV8 main.as
+```
+
+### Generating Assembly from Java
+
+Some demos use Java to generate assembly. Example: `toolchain/src/org/elijaxapps/code2code/BadAppleV4.java`
+
+(you need to extract the frames from BadApple! video, and store them in `./frames`).
+
+```java
+public static void main(String[] args) {
+    PrintWriter writer = new PrintWriter("main.as");
+    writer.print(".data\n");
+    writer.print(".code\n");
+    writer.print(".main\n");
+    // Generates pixel operations, animation frames, etc
+    writer.print("POKE ...");
+    writer.print("JMP run\n");
+    writer.close();
+}
+```
+
+---
+
+## Running Programs in Logisim
+
+1. Open Logisim Evolution.
+2. Load the Libre8 schematic.
+3. Import the assembled binary (`bin.hex`).
+4. Run the simulation.
+
+---
+
+## Writing Programs for Libre8
+
+### Assembly Format and Structure
+
+Assembly files use:
+
+- `.data` section for variables and offsets
+- `.code` section for instructions
+- Tags (`.Main`, `.funcName`) for entry points and branching
+
+Example:
+
+```
+;; Global Variables
 .data
+one 000000ffh 01  ;; Variable 'one' at offset '000000ff' with value '01'
+addOne 000001ffh  ;; Function prototype with no arguments 'addOne' at offset '000001ffh'
 
-;; Here we can define variables or function offsets.
-;; A variable declaration is as following:
-;; <name> <address> <value>
-one 0000ffh 01
-
-;; A function declaration is the same without value
-addOne 0001ffh
-
-;; To start coding you have to write .code (beginnings of the program)
+;; Begin
 .code
-;; Similar to .code, you can define a tag using "."
-;; We are now defining .Main tag. (saving the current offset of the execution in the name of the tag)
-.Main
-;; We will load value of 'one' var (01) to A and ADD one to its value.
-LDA one
-;; We call addOne function
-B addOne
-;; Ant print it on screen
+.Main       ;; Tag. Can be used to jump to.
+B addOne    ;; Branch to addOne
 OUTA
 
-;; We define addOne function
 .addOne
-ADD one
-STA result
-BX result
+LDA one     ;; Load var 'one' in REG A.
+ADD one     ;; ADD one to one using REG B.
+STA result  ;; STORE at offset 'result'
+BX result   ;; RETURN 'result'
 ```
 
-You can also define running offset tags to help you to jump to (only backwards).
+### C/C++ Integration
+
+Embed assembly using `__asm { ... }` blocks:
+
+```c
+void drawPixel() {
+    __asm {
+        ;; Y coordinate
+        PIKY foo
+        ;; X coordinate
+        PIKX paddleLeftX
+        ;; VGA Colour
+        PXYD ff
+    }
+}
 ```
-;; Same program as above with JNC to tag
-.data
-one 0000ffh 01
-addOne 0001ffh
-.code
-.Main
-LDA one
-;; We define a running offset before the function call
-.tag
-B addOne
-OUTA
-;; We jump to tag to add on over and over again until carry flag is set.
-JNC tag
 
-.addOne
-ADD one
-STA result
-BX result
-```
-# How to compile a program
+---
 
-To compile any code, you have to save it in a file and pass it
-as an argument to <b>Compiler.java</b>. You can also simply name it "main.as" 
-and place it on root folder of the project. If you run <br/>
-Compiler.java on eclipse it will find ```main.as``` file.
+## Full Instruction Set Reference (MicroCodeV8GPT)
 
+Below is a comprehensive opcode list from `MicroCodeV8GPT.java`. Each opcode is atomic, with unique hexadecimal codes:
 
-# How to run the program inside the schematic with Logisim
+### Atomic Opcodes
 
-To run the simulation, open Libre8.circ with Logisim. The file resides
-inside ```logisim``` folder. Once the file is loaded, double click on labelled RAM component,
-(see picture of circuit) and load the program you previously compiled on the component<br/>
+| Mnemonic      | Hex    | Description                           |
+|---------------|--------|---------------------------------------|
+| LD            | 0x1d00 | Generic load                          |
+| LDA           | 0x1a00 | Load register A                       |
+| LDB           | 0x1b00 | Load register B                       |
+| LDC           | 0x1c00 | Load register C                       |
+| LDD           | 0x1e00 | Load register D                       |
+| LDIA          | 0xda00 | Inmediate load to A                   |
+| LDIB          | 0xdb00 | Inmediate load to B                   |
+| LDIC          | 0xdc00 | Inmediate load to C                   |
+| LDID          | 0xdd00 | Inmediate load to D                   |
+| MOV_AMem      | 0xf000 | Move A to memory                      |
+| MOV_MemA      | 0xf100 | Move memory to A                      |
+| MOV_AB        | 0xf200 | Move A to B                           |
+| MOV_AC        | 0xf300 | Move A to C                           |
+| MOV_AD        | 0xf400 | Move A to D                           |
+| MOV_BMem      | 0xf500 | Move B to memory                      |
+| MOV_MemB      | 0xf600 | Move memory to B                      |
+| MOV_BA        | 0xf700 | Move B to A                           |
+| MOV_BC        | 0xf800 | Move B to C                           |
+| MOV_BD        | 0xf900 | Move B to D                           |
+| MOV_CMem      | 0xfa00 | Move C to memory                      |
+| MOV_MemC      | 0xfb00 | Move memory to C                      |
+| MOV_CA        | 0xfc00 | Move C to A                           |
+| MOV_CB        | 0xfd00 | Move C to B                           |
+| MOV_CD        | 0xfe00 | Move C to D                           |
+| MOV_DMem      | 0xff00 | Move D to memory                      |
+| MOV_SP_BP     | 0x0100 | Move Stack Pointer to Base Pointer    |
+| MOV_DI_I      | 0x0200 | Move DI to I                          |
+| MOV_REG_BP    | 0x0300 | Move register to Base Pointer         |
+| STA           | 0x5a00 | Store A in memory                     |
+| STB           | 0x5b00 | Store B in memory                     |
+| STC           | 0x5c00 | Store C in memory                     |
+| STD           | 0x5d00 | Store D in memory                     |
+| ADD           | 0xaa00 | Add                                   |
+| SUB           | 0xa500 | Subtract                              |
+| MUL           | 0xa200 | Multiply                              |
+| DIV           | 0xad00 | Divide                                |
+| DEC           | 0xde00 | Read byte from keyboard               |
+| DECE          | 0xdf00 | Read byte and echo                    |
+| IADD          | 0x6a00 | Inmediate add                         |
+| ISUB          | 0x6500 | Inmediate subtract                    |
+| IMUL          | 0x6200 | Inmediate multiply                    |
+| IDIV          | 0x6d00 | Inmediate divide                      |
+| POKE          | 0x9700 | Render 72-pixel row on GPU            |
+| POKX          | 0x9a00 | Set X coordinate on GPU (direct)      |
+| POKY          | 0x9b00 | Set Y coordinate on GPU (direct)      |
+| PXYD          | 0x9c00 | Set pixel at X,Y (direct)             |
+| PIKX          | 0x9d00 | Set X coordinate (indirect)           |
+| PIKY          | 0x9e00 | Set Y coordinate (indirect)           |
+| PIYD          | 0x9f00 | Set pixel at X,Y (indirect)           |
+| NOP           | 0x1100 | No operation                          |
+| HLT           | 0x9100 | Halt CPU                              |
+| JMP           | 0xe100 | Jump                                  |
+| JZ            | 0xe200 | Jump if Zero                          |
+| JC            | 0xe300 | Jump if Carry                         |
+| JNZ           | 0xe400 | Jump if Not Zero                      |
+| JNC           | 0xe500 | Jump if Not Carry                     |
+| BZ            | 0xe600 | Branch if Zero                        |
+| BNZ           | 0xe700 | Branch if Not Zero                    |
+| BC            | 0xe800 | Branch if Carry                       |
+| BNC           | 0xe900 | Branch if Not Carry                   |
+| B             | 0xea00 | Unconditional branch                  |
+| BX            | 0xeb00 | Return                                |
+| OUTA          | 0x0500 | Output A to LCD                       |
+| OUTB          | 0x0600 | Output B to LCD                       |
+| OUTC          | 0x0700 | Output C to LCD                       |
+| OUTD          | 0x0800 | Output D to LCD                       |
 
-Then you can Enable simulation and run clock. 
+(**Note:** This list is based on the current MicroCodeV8GPT; see source for the latest opcodes or custom extensions.)
 
-# How to write custom instructions
-There are a total of 256 possible operation codes. Even you can create an operation code
-able to fetch complex instructions, formed by several opcodes concatenated.
+---
 
-So there is the other java file, Microcode.java. Within it are defined the instruction opcode
-in this format (0xab00). The opcode is just ab, but you need to write the trailing zeroes to
-make the program work.
+## Signals, Flags, and Hardware
 
-Once you have your opcode, write the following inside the main method (anywhere just below any previpus 
-create<Operation>() invocations would do) the following sentences:
-```
+Libre8 uses signals for microcode control:
+
+| Signal Name      | Abbreviation | Function                          |
+|------------------|--------------|-----------------------------------|
+| r0-r3            | -            | Register operations               |
+| FI               | FI           | Flags input                       |
+| MI0, MI2         | MI           | Memory address register           |
+| HALT             | HALT         | Halts the computer                |
+| ALU_SUB          | ALU_SUB      | ALU subtraction                   |
+| ALU_EOUT         | ALU_EOUT     | ALU addition                      |
+| COUT             | COUT         | LCD console output                |
+| II               | II           | Instruction register input        |
+| J0, J2           | J0, J2       | Jump registers (counter)          |
+| RI               | RI           | RAM input from bus                |
+| RO               | RO           | RAM output to bus                 |
+| clpcr            | clpcr        | Clear program counter             |
+| CE               | CE           | Increment program counter         |
+| CO               | CO           | Output program counter to bus     |
+| LR0, LR2, LRO    | -            | Stack selection/output            |
+| MII              | MII          | One-cycle memory IN               |
+| CPP              | CPP          | Stack pointer increment           |
+| CMM              | CMM          | Stack pointer decrement           |
+| KBO              | KBO          | Keyboard out                      |
+| KBI              | KBI          | Keyboard in                       |
+
+Flags used for conditional branching: ZERO_FLAG, CARRY_FLAG, BORROW_FLAG, PARITY_FLAG, etc.
+
+---
+
+## Custom Instructions
+
+You may add new opcodes using the microcode generator (`MicroCodeV8GPT.java`). See below for how to add a new instruction:
+
+```java
 setOffset(OPCODE_CONST, icuadrant);
 write(Signals.CO + Signals.MII);
 write(Signals.RO + Signals.II + Signals.CE);
-... your custom signaling goes here ...
-write(Signals.clpcr);  
+// custom signals here
+write(Signals.clpcr);
 ```
 
-# Signals description
-| Signal Name     |     Abbreviation  | Function         |
-|-----------------|-------------------|------------------|
-|  r0,r1,r2,r3    |         -         | Controls register operations. See <b>Registers</b>                                                                              |
-|  Flags In       |        FI         | Enables input to flags register                                                                                                 |
-|  Memory In      |     MI0, MI2      | Controls Memory Address Register, in other words, is the pointer of the RAM                                                     |
-|  Halt Signal    |       HALT        | Halts the computer                                                                                                              |
-| ALU Substraction|     ALU_SUB       | Enables SUBSTRACT operation in the ALU. Use in conjuntion with Signals.SUM (to connect registers A + B), and FI (to set flags)  |
-| ALU Addition    |     ALU_EOUT      | Enables Addition operation in the ALU. The second point is exactly as above                                                     |
-| Console Out     |       COUT        | Enables LCD console register. It is just a cursor, with no knowledge of its own position if you do not track it by yourself     |
-| Instruction In  |        II         | Loads from the bus to the Instruction Register                                                                                  |
-| Jump Registers  |      J0, J2       | Enables the load from the bus to the Jump registers (COUNTER)                                                                   |
-| RAM In          |        RI         | Enable RAM load from the bus                                                                                                    |
-| RAM Out         |        RO         | Enable RAM Output to the bus                                                                                                    |
-| Clear Program Counter |  clpcr      | Resets the instruction counter, used for microcode operations.                                                                  |
-| Count Enable          |      CE     | Increments the program counter by one in the next cicle                                                                         |
-| Counter Out           |      CO     | Outputs the current program counter value to the bus                                                                            |
-| Stack operations      |LR0, LR2, LRO| Controls the stack selection (LR0, LR2) and stack output utput enable (LRO). You can only echo one stack at a time.             |
-| One Cycle Memory IN   |    MII      | Special operation for transfer program counter register values to memory address register                                       |
-|Stack pointer increment|    CPP      | Increments the stack pointer. Useful after a push operation on the stack                                                        |
-|Stack pointer decrement|    CMM      | Decrements the stack pointer. Useful before a pop operation on the stack                                                        |
-| Keyboard Out          |    KBO      | Copy Keyboard component register to cursor                                                                                      |
-| Keyboard In           |    KBI      | Enables Keyboard read                                                                                                           |
+---
 
-# Flags
-· ```CARRY``` is up when an overflow has occured while substracting or adding. <br/>
-· ```ZERO```  is up when the ALU value is zero while substracting or adding.<br/>
+## Example Programs
+
+### C Example: Pong
+
+See `toolchain/C_src/Pong.c` for a working Pong game, using graphics opcodes and input handling.
+
+### Assembly Example: Animation
+
+See the Java generators (`BadAppleV4.java`, `Dino.java`) for scripts that create `.as` files with GPU instructions for frame animations.
+
+---
+
+## Contributing
+
+Pull requests and issues are welcome! Please see code and documentation for guidance.
+
+---
+
+## License
+
+MIT License (see LICENSE file).
+
+---
+
+## References
+
+- [MicroCodeV8GPT.java](https://github.com/crossplatformdev/Libre8/blob/main/toolchain/src/org/elijaxapps/libre8/ucode/MicroCodeV8GPT.java)
+- [MiniCCompilerGPT.java](https://github.com/crossplatformdev/Libre8/blob/main/toolchain/src/org/elijaxapps/libre8/c/MiniCCompilerGPT.java)
+- [AssemblerV8GPT.java](https://github.com/crossplatformdev/Libre8/blob/main/toolchain/src/org/elijaxapps/libre8/as/AssemblerV8GPT.java)
+- [Explore more code examples](https://github.com/crossplatformdev/Libre8/search)
+- [Logisim Evolution](https://github.com/logisim-evolution/logisim-evolution)
+
+---
