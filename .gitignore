@@ -11,3 +11,5 @@ target/*
 src/target/*
 toolchain/target/*
 _.png.txt
+toolchain/pixels_output.txt
+toolchain/output/bin.hex

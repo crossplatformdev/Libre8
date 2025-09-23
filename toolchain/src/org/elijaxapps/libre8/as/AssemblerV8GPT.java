@@ -1,11 +1,12 @@
 package org.elijaxapps.libre8.as;
 
+// Use a more memory-efficient map for mem0
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,14 +127,14 @@ public class AssemblerV8GPT {
     private static final long LDR = 0xaa;
 
     // Memory Constants
-    public static final int WORD_SIZE = 16;
-    public static final int MEMORY_SIZE = 16384;
-    public static final int TOTAL_SIZE = (MEMORY_SIZE * WORD_SIZE) + WORD_SIZE;
-    public static final int FILE_SIZE = 16 * 1024 * 1024;
+    public static final int WORD_SIZE = 16; // Number of bytes per word
+    public static final long MEMORY_SIZE = 1L << 32;
+    public static final long TOTAL_SIZE = (MEMORY_SIZE * WORD_SIZE) + WORD_SIZE;
+    public static final long FILE_SIZE = 4L * 1024 * 1024 * 1024;
 
-    public static String[][] memory = new String[MEMORY_SIZE][WORD_SIZE];
-    public static String[] mem0 = new String[FILE_SIZE];
-    public static String[] variables = new String[FILE_SIZE];
+    // Optimized memory structures
+    public static HashMap<Long, Byte> mem0 = new HashMap<>();
+    public static ArrayList<String> variables = new ArrayList<>();
 
     // State and bookkeeping
     private static List<String> lines = new ArrayList<>();
@@ -151,6 +152,7 @@ public class AssemblerV8GPT {
     private static String clean;
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Libre8 Assembler V8GPT - Compiling Assembly to Binary");
         if (args.length == 0) {
             System.out.println("No input file specified. Using default: main.as");
             args = new String[]{"main.as"};
@@ -159,14 +161,12 @@ public class AssemblerV8GPT {
     }
 
     public static void run(String filename) throws Exception {
-        Arrays.fill(mem0, "00");
-
         File inputFile = (filename.length() == 0) ? new File("main.as") : new File(filename);
         BufferedReader br = null;
+        String line = null; // Declare outside loop for reuse
         try {
             br = new BufferedReader(new FileReader(inputFile));
             System.out.println("Parsing file...");
-            String line;
             while ((line = br.readLine()) != null) {
                 clean = line.trim();
                 if (!clean.isEmpty()) {
@@ -201,9 +201,22 @@ public class AssemblerV8GPT {
         System.out.println("\nSuccess compiling and writing binary!");
     }
 
+    private static String dump() {
+        String s = new String();
+        for (long i = 0; i < mem0.size(); i++) {
+            s += (String.format("%02X", mem0.getOrDefault(i, (byte) 0)));
+            if ((i + 1) % 16 == 0) {
+                s += ("\n");
+            }
+        }
+        return s;
+    }
+
     private static void runCompiler() throws Exception {
-        for (String line : lines) {
-            clean = line;
+        String currentLine = null; // Declare outside for reuse
+        for (String l : lines) {
+            currentLine = l;
+            clean = currentLine;
             if (clean.startsWith(";;") || clean.startsWith("//") || clean.startsWith("#")) {
                 continue;
             }
@@ -249,35 +262,25 @@ public class AssemblerV8GPT {
                     continue;
                 }
                 parseData(clean, counter);
-                parseData(clean, counter);
             }
 
-            if (counter % 24 == 0) {
+            if (counter % 102400 == 0) {
                 System.out.println();
+            } else {
+                if (counter % 102400 == 1) {
+                    System.out.println("Line " + counter);
+                }
             }
             counter++;
-            System.out.print(".");
         }
-    }
-
-    private static String dump() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < FILE_SIZE; i++) {
-            sb.append(mem0[i]).append(" ");
-            if ((i + 1) % 8 == 0) {
-                sb.append("\n");
-            }
-        }
-        return sb.toString();
     }
 
     private static int parseInstruction(String line, int counter) throws Exception {
-        String patternString = "^([a-zA-Z0-9]{1,4})\\s?([0-9A-Fa-f]{8,256}h?|[\\w_]{1,256}|.*)$";
-        Pattern pattern = Pattern.compile(patternString);
         if (line == null || line.isEmpty()) {
             return offset;
         }
-
+        String patternString = "^([a-zA-Z0-9]{1,4})\\s?([0-9A-Fa-f]{8,256}h?|[\\w_]{1,256}|[a-zA-Z0-9]*)$";
+        Pattern pattern = Pattern.compile(patternString);
         Matcher matcher = pattern.matcher(line);
         if (!matcher.matches()) {
             throw new Exception("Error parsing line " + counter + " -> " + line);
@@ -301,116 +304,321 @@ public class AssemblerV8GPT {
         }
 
         switch (instruction) {
-            case "JMP": instructionHex = Long.toHexString(JMP); break;
-            case "JZ": instructionHex = Long.toHexString(JZ); break;
-            case "JC": instructionHex = Long.toHexString(JC); break;
-            case "JNZ": instructionHex = Long.toHexString(JNZ); break;
-            case "JNC": instructionHex = Long.toHexString(JNC); break;
-            case "JNB": instructionHex = Long.toHexString(JNB); break;
-            case "JB": instructionHex = Long.toHexString(JB); break;
-            case "JP": instructionHex = Long.toHexString(JP); break;
-            case "JNP": instructionHex = Long.toHexString(JNP); break;
-            case "LDA": instructionHex = Long.toHexString(LDA); break;
-            case "LDB": instructionHex = Long.toHexString(LDB); break;
-            case "LDC": instructionHex = Long.toHexString(LDC); break;
-            case "LDD": instructionHex = Long.toHexString(LDD); break;
-            case "LDIA": instructionHex = Long.toHexString(LDIA); break;
-            case "LDIB": instructionHex = Long.toHexString(LDIB); break;
-            case "LDIC": instructionHex = Long.toHexString(LDIC); break;
-            case "LDID": instructionHex = Long.toHexString(LDID); break;
-            case "STA": instructionHex = Long.toHexString(STA); break;
-            case "STB": instructionHex = Long.toHexString(STB); break;
-            case "STC": instructionHex = Long.toHexString(STC); break;
-            case "STD": instructionHex = Long.toHexString(STD); break;
-            case "ADD": instructionHex = Long.toHexString(ADD); break;
-            case "SUB": instructionHex = Long.toHexString(SUB); break;
-            case "MUL": instructionHex = Long.toHexString(MUL); break;
-            case "DIV": instructionHex = Long.toHexString(DIV); break;
-            case "DEC": instructionHex = Long.toHexString(DEC); isSingleToken = true; break;
-            case "DECE": instructionHex = Long.toHexString(DECE); isSingleToken = true; break;
-            case "DECI": instructionHex = Long.toHexString(DECI); isSingleToken = true; break;
-            case "IADD": instructionHex = Long.toHexString(IADD); break;
-            case "ISUB": instructionHex = Long.toHexString(ISUB); break;
-            case "IMUL": instructionHex = Long.toHexString(IMUL); break;
-            case "IDIV": instructionHex = Long.toHexString(IDIV); break;
-            case "POKE": instructionHex = Long.toHexString(POKE); break;
-            case "POKX": instructionHex = Long.toHexString(POKX); break;
-            case "POKY": instructionHex = Long.toHexString(POKY); break;
-            case "PXYD": instructionHex = Long.toHexString(PXYD); break;
-            case "PIKX": instructionHex = Long.toHexString(PIKX); break;
-            case "PIKY": instructionHex = Long.toHexString(PIKY); break;
-            case "PIYD": instructionHex = Long.toHexString(PIYD); break;
-            case "OUT": instructionHex = Long.toHexString(OUTA); isSingleToken = true; break;
-            case "OUTA": instructionHex = Long.toHexString(OUTA); isSingleToken = true; break;
-            case "OUTB": instructionHex = Long.toHexString(OUTB); isSingleToken = true; break;
-            case "OUTC": instructionHex = Long.toHexString(OUTC); isSingleToken = true; break;
-            case "OUTD": instructionHex = Long.toHexString(OUTD); isSingleToken = true; break;
-            case "PSAX": instructionHex = Long.toHexString(PSAX); isSingleToken = true; break;
-            case "PSAH": instructionHex = Long.toHexString(PSAH); break;
-            case "PSAL": instructionHex = Long.toHexString(PSAL); break;
-            case "POPX": instructionHex = Long.toHexString(POPX); isSingleToken = true; break;
-            case "POPH": instructionHex = Long.toHexString(POPH); break;
-            case "POPL": instructionHex = Long.toHexString(POPL); break;
-            case "LDI": instructionHex = Long.toHexString(LDI); break;
-            case "HLT": instructionHex = Long.toHexString(HLT); break;
-            case "NOP": instructionHex = Long.toHexString(NOP); break;
-            case "MOV_AB": instructionHex = Long.toHexString(MOV_AB); isSingleToken = true; break;
-            case "MOV_AC": instructionHex = Long.toHexString(MOV_AC); isSingleToken = true; break;
-            case "MOV_AD": instructionHex = Long.toHexString(MOV_AD); isSingleToken = true; break;
-            case "MOV_BA": instructionHex = Long.toHexString(MOV_BA); isSingleToken = true; break;
-            case "MOV_BC": instructionHex = Long.toHexString(MOV_BC); isSingleToken = true; break;
-            case "MOV_BD": instructionHex = Long.toHexString(MOV_BD); isSingleToken = true; break;
-            case "MOV_CA": instructionHex = Long.toHexString(MOV_CA); isSingleToken = true; break;
-            case "MOV_CB": instructionHex = Long.toHexString(MOV_CB); isSingleToken = true; break;
-            case "MOV_CD": instructionHex = Long.toHexString(MOV_CD); isSingleToken = true; break;
-            case "MOV_SP_BP": instructionHex = Long.toHexString(MOV_SP_BP); isSingleToken = true; break;
-            case "MOV_REG_BP": instructionHex = Long.toHexString(MOV_REG_BP); isSingleToken = true; break;
-            case "MOV_AMem": instructionHex = Long.toHexString(MOV_AMem); break;
-            case "MOV_BMem": instructionHex = Long.toHexString(MOV_BMem); break;
-            case "MOV_CMem": instructionHex = Long.toHexString(MOV_CMem); break;
-            case "MOV_DMem": instructionHex = Long.toHexString(MOV_DMem); break;
-            case "MOV_MemA": instructionHex = Long.toHexString(MOV_MemA); break;
-            case "MOV_MemB": instructionHex = Long.toHexString(MOV_MemB); break;
-            case "MOV_MemC": instructionHex = Long.toHexString(MOV_MemC); break;
-            case "B": instructionHex = Long.toHexString(B); break;
-            case "BC": instructionHex = Long.toHexString(BC); break;
-            case "BNC": instructionHex = Long.toHexString(BNC); break;
-            case "BZ": instructionHex = Long.toHexString(BZ); break;
-            case "BNZ": instructionHex = Long.toHexString(BNZ); break;
-            case "BNB": instructionHex = Long.toHexString(BNB); break;
-            case "BP": instructionHex = Long.toHexString(BP); break;
-            case "BNP": instructionHex = Long.toHexString(BNP); break;
-            case "BB": instructionHex = Long.toHexString(BB); break;
-            case "BX": instructionHex = Long.toHexString(BX); break;
-            case "RST": instructionHex = Long.toHexString(RST); break;
-            case "PST": instructionHex = Long.toHexString(PST); break;
-            case "PTRI": instructionHex = Long.toHexString(PTRI); break;
-            case "PTRD": instructionHex = Long.toHexString(PTRD); break;
-            case "PTRL": instructionHex = Long.toHexString(PTRL); break;
-            case "PTRS": instructionHex = Long.toHexString(PTRS); break;
-            case "LDR": instructionHex = Long.toHexString(LDR); break;
-            case "OUTT": instructionHex = Long.toHexString(OUTT); isSingleToken= true; break;
-            case "OUTM": instructionHex = Long.toHexString(OUTM); isSingleToken = true; break;
-            default: throw new Exception("Unknown mnemonic: " + instruction + " in line " + counter);
+            case "JMP":
+                instructionHex = Long.toHexString(JMP);
+                break;
+            case "JZ":
+                instructionHex = Long.toHexString(JZ);
+                break;
+            case "JC":
+                instructionHex = Long.toHexString(JC);
+                break;
+            case "JNZ":
+                instructionHex = Long.toHexString(JNZ);
+                break;
+            case "JNC":
+                instructionHex = Long.toHexString(JNC);
+                break;
+            case "JNB":
+                instructionHex = Long.toHexString(JNB);
+                break;
+            case "JB":
+                instructionHex = Long.toHexString(JB);
+                break;
+            case "JP":
+                instructionHex = Long.toHexString(JP);
+                break;
+            case "JNP":
+                instructionHex = Long.toHexString(JNP);
+                break;
+            case "LDA":
+                instructionHex = Long.toHexString(LDA);
+                break;
+            case "LDB":
+                instructionHex = Long.toHexString(LDB);
+                break;
+            case "LDC":
+                instructionHex = Long.toHexString(LDC);
+                break;
+            case "LDD":
+                instructionHex = Long.toHexString(LDD);
+                break;
+            case "LDIA":
+                instructionHex = Long.toHexString(LDIA);
+                break;
+            case "LDIB":
+                instructionHex = Long.toHexString(LDIB);
+                break;
+            case "LDIC":
+                instructionHex = Long.toHexString(LDIC);
+                break;
+            case "LDID":
+                instructionHex = Long.toHexString(LDID);
+                break;
+            case "STA":
+                instructionHex = Long.toHexString(STA);
+                break;
+            case "STB":
+                instructionHex = Long.toHexString(STB);
+                break;
+            case "STC":
+                instructionHex = Long.toHexString(STC);
+                break;
+            case "STD":
+                instructionHex = Long.toHexString(STD);
+                break;
+            case "ADD":
+                instructionHex = Long.toHexString(ADD);
+                break;
+            case "SUB":
+                instructionHex = Long.toHexString(SUB);
+                break;
+            case "MUL":
+                instructionHex = Long.toHexString(MUL);
+                break;
+            case "DIV":
+                instructionHex = Long.toHexString(DIV);
+                break;
+            case "DEC":
+                instructionHex = Long.toHexString(DEC);
+                isSingleToken = true;
+                break;
+            case "DECE":
+                instructionHex = Long.toHexString(DECE);
+                isSingleToken = true;
+                break;
+            case "DECI":
+                instructionHex = Long.toHexString(DECI);
+                isSingleToken = true;
+                break;
+            case "IADD":
+                instructionHex = Long.toHexString(IADD);
+                break;
+            case "ISUB":
+                instructionHex = Long.toHexString(ISUB);
+                break;
+            case "IMUL":
+                instructionHex = Long.toHexString(IMUL);
+                break;
+            case "IDIV":
+                instructionHex = Long.toHexString(IDIV);
+                break;
+            case "POKE":
+                instructionHex = Long.toHexString(POKE);
+                break;
+            case "POKX":
+                instructionHex = Long.toHexString(POKX);
+                break;
+            case "POKY":
+                instructionHex = Long.toHexString(POKY);
+                break;
+            case "PXYD":
+                instructionHex = Long.toHexString(PXYD);
+                break;
+            case "PIKX":
+                instructionHex = Long.toHexString(PIKX);
+                break;
+            case "PIKY":
+                instructionHex = Long.toHexString(PIKY);
+                break;
+            case "PIYD":
+                instructionHex = Long.toHexString(PIYD);
+                break;
+            case "OUT":
+                instructionHex = Long.toHexString(OUTA);
+                isSingleToken = true;
+                break;
+            case "OUTA":
+                instructionHex = Long.toHexString(OUTA);
+                isSingleToken = true;
+                break;
+            case "OUTB":
+                instructionHex = Long.toHexString(OUTB);
+                isSingleToken = true;
+                break;
+            case "OUTC":
+                instructionHex = Long.toHexString(OUTC);
+                isSingleToken = true;
+                break;
+            case "OUTD":
+                instructionHex = Long.toHexString(OUTD);
+                isSingleToken = true;
+                break;
+            case "PSAX":
+                instructionHex = Long.toHexString(PSAX);
+                isSingleToken = true;
+                break;
+            case "PSAH":
+                instructionHex = Long.toHexString(PSAH);
+                break;
+            case "PSAL":
+                instructionHex = Long.toHexString(PSAL);
+                break;
+            case "POPX":
+                instructionHex = Long.toHexString(POPX);
+                isSingleToken = true;
+                break;
+            case "POPH":
+                instructionHex = Long.toHexString(POPH);
+                break;
+            case "POPL":
+                instructionHex = Long.toHexString(POPL);
+                break;
+            case "LDI":
+                instructionHex = Long.toHexString(LDI);
+                break;
+            case "HLT":
+                instructionHex = Long.toHexString(HLT);
+                break;
+            case "NOP":
+                instructionHex = Long.toHexString(NOP);
+                break;
+            case "MOV_AB":
+                instructionHex = Long.toHexString(MOV_AB);
+                isSingleToken = true;
+                break;
+            case "MOV_AC":
+                instructionHex = Long.toHexString(MOV_AC);
+                isSingleToken = true;
+                break;
+            case "MOV_AD":
+                instructionHex = Long.toHexString(MOV_AD);
+                isSingleToken = true;
+                break;
+            case "MOV_BA":
+                instructionHex = Long.toHexString(MOV_BA);
+                isSingleToken = true;
+                break;
+            case "MOV_BC":
+                instructionHex = Long.toHexString(MOV_BC);
+                isSingleToken = true;
+                break;
+            case "MOV_BD":
+                instructionHex = Long.toHexString(MOV_BD);
+                isSingleToken = true;
+                break;
+            case "MOV_CA":
+                instructionHex = Long.toHexString(MOV_CA);
+                isSingleToken = true;
+                break;
+            case "MOV_CB":
+                instructionHex = Long.toHexString(MOV_CB);
+                isSingleToken = true;
+                break;
+            case "MOV_CD":
+                instructionHex = Long.toHexString(MOV_CD);
+                isSingleToken = true;
+                break;
+            case "MOV_SP_BP":
+                instructionHex = Long.toHexString(MOV_SP_BP);
+                isSingleToken = true;
+                break;
+            case "MOV_REG_BP":
+                instructionHex = Long.toHexString(MOV_REG_BP);
+                isSingleToken = true;
+                break;
+            case "MOV_AMem":
+                instructionHex = Long.toHexString(MOV_AMem);
+                break;
+            case "MOV_BMem":
+                instructionHex = Long.toHexString(MOV_BMem);
+                break;
+            case "MOV_CMem":
+                instructionHex = Long.toHexString(MOV_CMem);
+                break;
+            case "MOV_DMem":
+                instructionHex = Long.toHexString(MOV_DMem);
+                break;
+            case "MOV_MemA":
+                instructionHex = Long.toHexString(MOV_MemA);
+                break;
+            case "MOV_MemB":
+                instructionHex = Long.toHexString(MOV_MemB);
+                break;
+            case "MOV_MemC":
+                instructionHex = Long.toHexString(MOV_MemC);
+                break;
+            case "B":
+                instructionHex = Long.toHexString(B);
+                break;
+            case "BC":
+                instructionHex = Long.toHexString(BC);
+                break;
+            case "BNC":
+                instructionHex = Long.toHexString(BNC);
+                break;
+            case "BZ":
+                instructionHex = Long.toHexString(BZ);
+                break;
+            case "BNZ":
+                instructionHex = Long.toHexString(BNZ);
+                break;
+            case "BNB":
+                instructionHex = Long.toHexString(BNB);
+                break;
+            case "BP":
+                instructionHex = Long.toHexString(BP);
+                break;
+            case "BNP":
+                instructionHex = Long.toHexString(BNP);
+                break;
+            case "BB":
+                instructionHex = Long.toHexString(BB);
+                break;
+            case "BX":
+                instructionHex = Long.toHexString(BX);
+                break;
+            case "RST":
+                instructionHex = Long.toHexString(RST);
+                break;
+            case "PST":
+                instructionHex = Long.toHexString(PST);
+                break;
+            case "PTRI":
+                instructionHex = Long.toHexString(PTRI);
+                break;
+            case "PTRD":
+                instructionHex = Long.toHexString(PTRD);
+                break;
+            case "PTRL":
+                instructionHex = Long.toHexString(PTRL);
+                break;
+            case "PTRS":
+                instructionHex = Long.toHexString(PTRS);
+                break;
+            case "LDR":
+                instructionHex = Long.toHexString(LDR);
+                break;
+            case "OUTT":
+                instructionHex = Long.toHexString(OUTT);
+                isSingleToken = true;
+                break;
+            case "OUTM":
+                instructionHex = Long.toHexString(OUTM);
+                isSingleToken = true;
+                break;
+            default:
+                throw new Exception("Unknown mnemonic: " + instruction + " in line " + counter);
         }
-
-        if (offset >= mem0.length) {
-            throw new Exception("Out of memory");
-        }
-        mem0[offset++] = instructionHex;
+        /*
+            if (offset >= mem0.size()) {
+                throw new Exception("Out of memory");
+            }
+         */
+        mem0.put(Long.valueOf(offset++), Integer.valueOf(instructionHex, 16).byteValue());
 
         if (operand != null && !isSingleToken) {
             Matcher mHex = Pattern.compile("([0-9A-Fa-f]{2}){4}h?").matcher(operand);
 
             if (mHex.matches()) {
                 for (int i = 0; i < 4; i++) {
-                    mem0[offset++] = operand.substring(i * 2, (i + 1) * 2);
+                    mem0.put(Long.valueOf(offset++), Integer.valueOf(operand.substring(i * 2, (i + 1) * 2), 16).byteValue());
                 }
             } else {
                 Matcher mByte = Pattern.compile("([0-9A-Fa-f]{2}){1,256}").matcher(operand);
                 if (mByte.matches()) {
                     for (int i = 0; i < operand.length(); i += 2) {
-                        mem0[offset++] = operand.substring(i, i + 2);
+                        mem0.put(Long.valueOf(offset++), Integer.valueOf(operand.substring(i, i + 2), 16).byteValue());
                     }
                 }
             }
@@ -419,11 +627,10 @@ public class AssemblerV8GPT {
     }
 
     private static void parseData(String line, int counter) throws Exception {
-        Pattern pattern = Pattern.compile("([\\w\\*]+)\\s+([0-9A-Fa-f]{1,8})([hbdo])?\\s*([0-9A-Fa-f]{2}|'.*'|.*)?");
         if (line == null) {
             return;
         }
-
+        Pattern pattern = Pattern.compile("([\\w\\*]+)\\s+([0-9A-Fa-f]{1,8})([hbdo])?\\s*([0-9A-Fa-f]{2}|'.*'|.*)?");
         Matcher matcher = pattern.matcher(line);
         if (!matcher.matches()) {
             throw new Exception("Error parsing data at line: " + counter + " -> " + line);
@@ -436,29 +643,36 @@ public class AssemblerV8GPT {
 
         int base = 16;
         switch (radix != null ? radix : "") {
-            case "b": base = 2; break;
-            case "o": base = 8; break;
-            case "d": base = 10; break;
+            case "b":
+                base = 2;
+                break;
+            case "o":
+                base = 8;
+                break;
+            case "d":
+                base = 10;
+                break;
         }
 
         int address = Integer.parseInt(addressHex, base);
         String paddedAddress = String.format("%08X", address);
 
+        boolean isByte = false; // Declare outside for reuse
         if (value != null) {
             if (value.contains("'")) {
                 char c = value.replace("'", "").charAt(0);
                 value = String.format("%02x", (int) c);
             }
 
-            boolean isByte = false;
             try {
                 isByte = Integer.parseInt(value, 16) <= 0xff;
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             if (isByte) {
-                variables[vcounter] = name + " " + paddedAddress + " " + value;
+                variables.add(name + " " + paddedAddress + " " + value);
                 varsMap.put(name, paddedAddress);
-                mem0[address] = value;
+                mem0.put(Long.valueOf(address), Byte.valueOf(value));
             } else {
                 String[] args = value.contains(",") ? value.split(";*")[0].split(",") : value.split(";*")[0].split(" ");
                 for (int i = 0; i < args.length; i++) {
@@ -471,3 +685,4 @@ public class AssemblerV8GPT {
         }
     }
 }
+

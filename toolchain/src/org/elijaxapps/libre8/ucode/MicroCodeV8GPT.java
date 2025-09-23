@@ -8,10 +8,10 @@ import java.io.IOException;
 public class MicroCodeV8GPT {
 
     // Constants
-    private static final int WORD = 36;
+    private static final int WORD = 32; // 32 bits
     private static final int MEM_COLS = 8;
     private static final int MEM_DIGITS = WORD / 4;
-    private static final int LENGTH = 0x800000;
+    private static final int LENGTH = 0x100000;
     private static final int MEM_LEN = (MEM_COLS + 1) * LENGTH;
     private static final int MEM_CELLS = MEM_LEN * MEM_DIGITS;
     private static final int TOTAL_CELLS = MEM_LEN * MEM_COLS;
@@ -57,6 +57,8 @@ public class MicroCodeV8GPT {
     private static final long ADD = 0xaa00;
     private static final long SUB = 0xa500;
     private static final long MUL = 0xa200;
+    private static final long AND = 0xa300;
+    private static final long OR = 0xa400;
     private static final long DIV = 0xad00;
     private static final long DEC = 0xde00;
     private static final long DECE = 0xdf00;
@@ -64,7 +66,7 @@ public class MicroCodeV8GPT {
     private static final long ISUB = 0x6500;
     private static final long IMUL = 0x6200;
     private static final long IDIV = 0x6d00;
-    private static final long POKE = 0x9700;
+    private static final long POKE = 0x9500;
     private static final long POKX = 0x9a00;
     private static final long POKY = 0x9b00;
     private static final long PXYD = 0x9c00;
@@ -118,7 +120,7 @@ public class MicroCodeV8GPT {
         System.out.println("Formatted!");
         int ccount = 0;
         Long max = (Signals.PARITY_FLAG1 + Signals.ZERO_FLAG1 + Signals.CARRY_FLAG1 + Signals.BORROW_FLAG1
-                + Signals.LESSER_FLAG1 + Signals.GREATER_FLAG1 + Signals.EQUAL_FLAG1);
+                /*+ Signals.LESSER_FLAG1 + Signals.GREATER_FLAG1 + Signals.EQUAL_FLAG1*/);
         for (icuadrant = 0; icuadrant <= max; icuadrant += Signals.PARITY_FLAG1) {
             // All atomic operations and stubs preserved
             push8b(icuadrant, PSAX, Signals.AMEM + Signals.RW);
@@ -138,6 +140,8 @@ public class MicroCodeV8GPT {
             createArithmetic(icuadrant, SUB, Signals.RO + Signals.MEMB, Signals.SUB, Signals.AMEM);
             createArithmetic(icuadrant, MUL, Signals.RO + Signals.MEMB, Signals.MUL, Signals.AMEM);
             createArithmetic(icuadrant, DIV, Signals.RO + Signals.MEMB, Signals.DIV, Signals.AMEM);
+            createLogic(icuadrant, AND, Signals.RO + Signals.MEMB, Signals.AND, Signals.AMEM);
+            createLogic(icuadrant, OR, Signals.RO + Signals.MEMB, Signals.OR, Signals.AMEM);
             createIArithmetic(icuadrant, IADD, Signals.SUM, Signals.AMEM);
             createIArithmetic(icuadrant, ISUB, Signals.SUB, Signals.AMEM);
             createIArithmetic(icuadrant, IDIV, Signals.DIV, Signals.AMEM);
@@ -312,14 +316,11 @@ public class MicroCodeV8GPT {
     private static void createPOKE(int icuadrant, long poke, long... operations) throws Exception {
         setOffset(poke, icuadrant);
         fetch();
-        for (int m = 256; m > 0; --m) {
+        for(int zzz = 63; zzz > 0; zzz--) {
             readOneNotWrite();
-            if (m != 1) {
-                write(Signals.RO + Signals.REG_C + Signals.POKE);
-            } else {
-                write(Signals.RO + Signals.REG_C + Signals.POKE + Signals.clpcr);
-            }
+            write(Signals.RO + Signals.REG_C + Signals.POKE);            
         }
+        write(Signals.clpcr);
     }
 
     private static void createPXYD(int icuadrant, long pxyd, long operations) throws Exception {
@@ -585,6 +586,13 @@ public class MicroCodeV8GPT {
         write(Signals.clpcr);
     }
 
+    private static void createLogic(long icuadrant, long instruction, long... e) throws Exception {
+        setOffset(instruction, icuadrant);
+        fetch();
+        bit24Indirection(true, true, true, e);
+        write(Signals.clpcr);
+    }
+
     private static void createIArithmetic(long icuadrant, long instruction, long d, long e) throws Exception {
         setOffset(instruction, icuadrant);
         fetch();
@@ -687,7 +695,7 @@ public class MicroCodeV8GPT {
     }
 
     private static long clear(int address) throws Exception {
-        if ((address <= POKE + 2 || address > POKE + 512)) {
+        if ((address <= POKE + 2 || address > POKE + 128)) {
             fetch();
         }
         return address;
@@ -788,6 +796,9 @@ public class MicroCodeV8GPT {
         private static final long SUB = BTOA + Signals.FI + Signals.ALU_SUB;
         private static final long DIV = BTOA + Signals.FI + Signals.ALU_DIV;
         private static final long MUL = BTOA + Signals.FI + Signals.ALU_DIV + Signals.ALU_EOUT;
+        private static final long AND = BTOA + Signals.FI + Signals.ANDOR;
+        private static final long OR = BTOA + Signals.FI + Signals.ANDOR + Signals.ALU_EOUT;
+
         private static final long AMEM = 0 + REG_A + 0 + 0 + Signals.O0;
         private static final long ATOB = 0 + REG_A + 0 + 0 + Signals.O0 + REG_B;
         private static final long ATOC = 0 + REG_A + 0 + 0 + Signals.O0 + REG_C;

@@ -112,7 +112,21 @@
     <a name="circuit" val="STACK"/>
     <a name="clabel" val="STACK"/>
     <a name="clabelfont" val="SansSerif plain 12"/>
+    <a name="clabelup" val="west"/>
+    <a name="downloadFrequency" val="2083333.3333333333"/>
     <a name="simulationFrequency" val="4096.0"/>
+    <boardmap boardname="CYCLOARDUINO">
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+    </boardmap>
     <comp lib="0" loc="(10,140)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="behavior" val="pulldown"/>
@@ -295,6 +309,7 @@
     <comp lib="4" loc="(1200,80)" name="RAM">
       <a name="appearance" val="classic"/>
       <a name="asyncread" val="true"/>
+      <a name="label" val="C"/>
     </comp>
     <comp lib="4" loc="(310,200)" name="Counter">
       <a name="appearance" val="classic"/>
@@ -305,10 +320,12 @@
     <comp lib="4" loc="(610,80)" name="RAM">
       <a name="appearance" val="classic"/>
       <a name="asyncread" val="true"/>
+      <a name="label" val="A"/>
     </comp>
     <comp lib="4" loc="(900,80)" name="RAM">
       <a name="appearance" val="classic"/>
       <a name="asyncread" val="true"/>
+      <a name="label" val="B"/>
     </comp>
     <wire from="(10,140)" to="(50,140)"/>
     <wire from="(10,160)" to="(50,160)"/>

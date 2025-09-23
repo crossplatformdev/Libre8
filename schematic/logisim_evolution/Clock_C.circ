@@ -9,7 +9,6 @@
     <tool name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
-      <a name="type" val="output"/>
       <a name="width" val="8"/>
     </tool>
     <tool name="Probe">
@@ -20,8 +19,6 @@
       <a name="facing" val="east"/>
     </tool>
     <tool name="Constant">
-      <a name="facing" val="west"/>
-      <a name="value" val="0x0"/>
       <a name="width" val="8"/>
     </tool>
   </lib>
@@ -74,7 +71,15 @@
   <circuit name="Clock_c">
     <a name="circuit" val="Clock_c"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
+    <a name="downloadFrequency" val="2083333.3333333333"/>
     <a name="simulationFrequency" val="4096.0"/>
+    <boardmap boardname="CYCLOARDUINO">
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+      <mc/>
+    </boardmap>
     <comp lib="0" loc="(220,130)" name="Clock">
       <a name="appearance" val="classic"/>
     </comp>

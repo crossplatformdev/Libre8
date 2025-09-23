@@ -1,16 +1,17 @@
-#include <filesystem>
-#include <algorithm>
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <cstdio>
 #include <tuple>
+#include <filesystem>
+#include <algorithm>
+#include <jpeglib.h>
 #include <cmath>
 #include <climits>
-// Read PNG and extract palette indices and palette
-#define STB_IMAGE_IMPLEMENTATION
-#include <jpeglib.h>
+
+unsigned long long byteCount = 0;
 
 // VGA 256-color palette
 void vga256_palette(std::vector<std::tuple<int, int, int>>& palette) {
@@ -71,23 +72,28 @@ int closest_vga(int r, int g, int b,
         if (dist < distance) {
             distance = dist;
             best = i;
-            std::cout << "Closest VGA color for RGB(" << r << ", " << g << ", " << b 
-                      << ") is index " << best << " with distance " << distance  << " RGB(" << dr << ", " << dg << ", " << db << ")" << std::endl;
+//            std::cout << "Closest VGA color for RGB(" << r << ", " << g << ", " << b 
+//                      << ") is index " << best << " with distance " << distance  << " RGB(" << dr << ", " << dg << ", " << db << ")" << std::endl;
         }
     }
 
     return best;
 }
 
-// Helper: Read JPEG and convert to VGA palette indices
-bool readJPGIndices(const std::string& filename, std::vector<unsigned char>& indices,
-                    std::vector<std::tuple<int,int,int>>& jpg_palette,
-                    unsigned int& width, unsigned int& height,
-                    const std::vector<std::tuple<int,int,int>>& vga_palette)
+
+// Read JPEG and extract RGB pixels
+bool readJPGRGB(const std::string& filename,
+                std::vector<std::tuple<int,int,int>>& rgb_pixels,
+                unsigned int& width,
+                unsigned int& height,
+                std::ofstream& outputFile,
+                const std::vector<std::tuple<int, int, int>>& vga_palette)
 {
     FILE* infile = fopen(filename.c_str(), "rb");
-    if (!infile) return false;
-
+    if (!infile) {
+        std::cerr << "Failed to open JPEG: " << filename << std::endl;
+        return false;
+    }
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
     cinfo.err = jpeg_std_error(&jerr);
@@ -99,34 +105,62 @@ bool readJPGIndices(const std::string& filename, std::vector<unsigned char>& ind
     width = cinfo.output_width;
     height = cinfo.output_height;
     int channels = cinfo.output_components;
-
     if (channels != 3) {
         jpeg_finish_decompress(&cinfo);
         jpeg_destroy_decompress(&cinfo);
         fclose(infile);
+        std::cerr << "JPEG is not RGB: " << filename << std::endl;
         return false;
     }
 
-    indices.resize(width * height);
+    rgb_pixels.resize(width * height);
     JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)
         ((j_common_ptr)&cinfo, JPOOL_IMAGE, width * channels, 1);
 
-    for (unsigned int y = 0; y < height; y++) {
-        jpeg_read_scanlines(&cinfo, buffer, 1);
+        int r, g, b;
+        int pr, pg, pb;
+        int vga_index;
+        int prev_vga_index;
+    for(unsigned int y = 0; y < height; y++) {
+        jpeg_read_scanlines(&cinfo, buffer, 1); // <-- Llama aquí por cada fila
         for (unsigned int x = 0; x < width; x++) {
-            int r = buffer[0][x * 3 + 0];
-            int g = buffer[0][x * 3 + 1];
-            int b = buffer[0][x * 3 + 2];
-            int idx = closest_vga(r, g, b, vga_palette);
-            indices[y * width + x] = static_cast<unsigned char>(idx);
-        }
-    }
+            r = buffer[0][x * 3 + 0];
+            g = buffer[0][x * 3 + 1];
+            b = buffer[0][x * 3 + 2]; 
+            if(r == pr && g == pg && b == pb) {
+                // Same as previous pixel, skip
+                vga_index = prev_vga_index;
+            } else{
+                vga_index = closest_vga(r, g, b, vga_palette);
+            }
+            
+            prev_vga_index = vga_index;
+            pr = r; pg = g; pb = b;
 
+            
+            if (byteCount % 64 == 0) {
+                outputFile << "95 ";
+                byteCount++;
+                if (byteCount % 48 == 0) {
+                    outputFile << "\n";
+                }
+            }
+
+            outputFile << std::hex << (vga_index < 16 ? "0" : "") << vga_index << " ";
+            byteCount++;
+            if (byteCount % 48 == 0) {
+                outputFile << "\n";
+            }
+        }     
+    }
+   
+    std::cout << "Finished processing: " << filename << std::endl;  
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
     fclose(infile);
     return true;
 }
+
 
 int main()
 {
@@ -135,56 +169,45 @@ int main()
         std::cerr << "Error opening pixels_output.txt" << std::endl;
         return -1;
     }
-    outputFile << ".data\n.code\n.main\n" << std::endl;
+    //outputFile << ".data\n.code\n.main\n" << std::endl;
 
     // Prepare VGA palette
     std::vector<std::tuple<int, int, int>> vga_palette;
     vga256_palette(vga_palette);
 
-    // Search for all .jpg and .jpeg files in current directory
+    // Procesar solo archivos .jpg en el directorio actual
     std::vector<std::string> imageFiles;
     for (const auto& entry : std::filesystem::directory_iterator(".")) {
         if (entry.is_regular_file()) {
             std::string ext = entry.path().extension().string();
             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-            if (ext == ".jpg" || ext == ".jpeg") {
+            if (ext == ".jpg") {
                 imageFiles.push_back(entry.path().string());
             }
         }
     }
-    // Sort files for consistent order
+
+    // Sort the image files by name
     std::sort(imageFiles.begin(), imageFiles.end());
 
-    for (const auto& filename : imageFiles)
-    {
-        std::vector<unsigned char> indices;
-        std::vector<std::tuple<int,int,int>> jpg_palette;
+    for (const auto& filename : imageFiles) {
+        std::cout << "Processing: " << filename << std::endl;
+        std::vector<std::tuple<int,int,int>> rgb_pixels;
         unsigned int width = 0, height = 0;
 
-        if (!readJPGIndices(filename, indices, jpg_palette, width, height, vga_palette)) {
+        if (!readJPGRGB(filename, rgb_pixels, width, height, outputFile, vga_palette)) {
             std::cerr << "Could not read: " << filename << std::endl;
             continue;
         }
 
-        if (width != 256 || height != 256) {
+        if (width != 252 || height != 252) {
             std::cerr << "Unexpected dimensions in: " << filename
                       << " (" << width << "x" << height << ")" << std::endl;
             continue;
         }
-
-        for (unsigned int y = 0; y < height; y++) {
-            outputFile << "POKE ";
-            for (unsigned int x = 0; x < width; x++) {
-                int vgaIndex = indices[y * width + x];
-                outputFile << std::uppercase;
-                if (vgaIndex < 16) outputFile << "0";
-                outputFile << std::hex << vgaIndex;
-            }
-            outputFile << "\n";
-        }
     }
 
-    outputFile << "JMP main\n" << std::endl;
+    outputFile << "e1 00 00 00 00" << std::endl;
     outputFile.close();
     std::cout << "Done. Data saved to pixels_output.txt" << std::endl;
     return 0;
