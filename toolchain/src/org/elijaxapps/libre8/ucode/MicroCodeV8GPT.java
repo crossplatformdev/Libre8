@@ -22,7 +22,6 @@ public class MicroCodeV8GPT {
     private static int k = 0;
 
     // Instruction codes (all atomic)
-    private static final long LD = 0x1d00;
     private static final long LDA = 0x1a00;
     private static final long LDB = 0x1b00;
     private static final long LDC = 0x1c00;
@@ -74,13 +73,14 @@ public class MicroCodeV8GPT {
     private static final long OUTB = 0x0600;
     private static final long OUTC = 0x0700;
     private static final long OUTD = 0x0800;
+    private static final long OUTS = 0x0900;
     private static final long PSAX = 0xc100;
     private static final long PSAH = 0xc200;
     private static final long PSAL = 0xc300;
     private static final long POPX = 0xc400;
     private static final long POPH = 0xc500;
     private static final long POPL = 0xc600;
-    private static final long LDI = 0xde00;
+    private static final long LDI = 0x1d00;
     private static final long HLT = 0x9100;
     private static final long STO = 0x8600;
     private static final long NOP = 0x1100;
@@ -127,7 +127,6 @@ public class MicroCodeV8GPT {
             pop8b(icuadrant, POPX, Signals.MEMA + Signals.RO);
             pushRst(icuadrant, RST);
             popRst(icuadrant, PST);
-            createLD(icuadrant, LD, Signals.MEMA);
             createLD(icuadrant, LDA, Signals.MEMA);
             createLD(icuadrant, LDB, Signals.MEMB);
             createLD(icuadrant, LDC, Signals.MEMC);
@@ -150,6 +149,7 @@ public class MicroCodeV8GPT {
             createOUTput(icuadrant, OUTB, Signals.BMEM);
             createOUTput(icuadrant, OUTC, Signals.CMEM);
             createOUTput(icuadrant, OUTD, Signals.DMEM);
+            createOUTS(icuadrant, OUTS, Signals.AMEM);
             createINput(icuadrant, DEC, false);
             createINput(icuadrant, DECE, true);
             jump(icuadrant, JMP);
@@ -524,8 +524,18 @@ public class MicroCodeV8GPT {
     private static void createOUTput(long icuadrant, long instruction, long dMEM) throws Exception {
         setOffset(instruction, icuadrant);
         fetch();
-           write(Signals.COUT + dMEM + Signals.ALU_EOUT); // Something Failed Here...s
+        write(Signals.COUT + dMEM + Signals.ALU_EOUT); // Something Failed Here...s
         write(Signals.clpcr);
+    }
+    
+    private static void createOUTS(long icuadrant, long instruction, long dMEM) throws Exception {
+        setOffset(instruction, icuadrant);
+        //If icuadrant is 0, never stop, but if ZERO_FLAG1 is set, stop after one iteration
+        fetch();
+        
+        write(Signals.COUT + Signals.MEMB + Signals.KBO); // Something Failed Here...s
+        
+            
     }
 
     private static void createOUTtelnet(long icuadrant, long instruction, long dMEM) throws Exception {
@@ -597,9 +607,7 @@ public class MicroCodeV8GPT {
         setOffset(instruction, icuadrant);
         fetch();
         readOneNotWrite();
-        write(Signals.RO + Signals.MEMB);
-        write(Signals.FI + d);
-        write(e);
+        write(Signals.RO + Signals.MEMB + Signals.MEMA + Signals.FI + Signals.ALU_EOUT);        
         write(Signals.clpcr);
     }
 

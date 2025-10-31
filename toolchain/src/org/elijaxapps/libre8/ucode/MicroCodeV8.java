@@ -21,8 +21,6 @@ public class MicroCodeV8 {
     private static int i = 0;
     private static int k = 0;
 
-    private static final long LD = 0x1d00;
-
     private static final long LDA = 0x1a00;
     private static final long LDB = 0x1b00;
     private static final long LDC = 0x1c00;
@@ -92,7 +90,7 @@ public class MicroCodeV8 {
     private static final long POPH = 0xc500;
     private static final long POPL = 0xc600;
 
-    private static final long LDI = 0xde00;
+    private static final long LDI = 0x1d00;
 
     private static final long HLT = 0x9100;
     private static final long STO = 0x8600;
@@ -154,7 +152,6 @@ public class MicroCodeV8 {
 
             pushRst(icuadrant, RST);
             popRst(icuadrant, PST);
-            createLD(icuadrant, LD, Signals.MEMA);
             createLD(icuadrant, LDA, Signals.MEMA);
             createLD(icuadrant, LDB, Signals.MEMB);
             createLD(icuadrant, LDC, Signals.MEMC);

@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 public class AssemblerV8 {
 
     // Instruction Opcodes
-    private static final long LD = 0x1d;
     private static final long LDA = 0x1a;
     private static final long LDB = 0x1b;
     private static final long LDC = 0x1c;
@@ -94,7 +93,7 @@ public class AssemblerV8 {
     private static final long NOP = 0x11;
 
     // Jump and Branch
-    private static final long JMP = 0xe1;
+    private static final long JMP = 0x1d;
     private static final long JZ = 0xe2;
     private static final long JC = 0xe3;
     private static final long JNZ = 0xe4;

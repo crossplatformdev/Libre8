@@ -170,8 +170,8 @@
     <comp lib="4" loc="(470,360)" name="RAM">
       <a name="addrWidth" val="32"/>
       <a name="appearance" val="classic"/>
+      <a name="enables" val="line"/>
       <a name="label" val="MEM"/>
-      <a name="trigger" val="high"/>
       <a name="type" val="nonvolatile"/>
     </comp>
     <wire from="(160,270)" to="(190,270)"/>
@@ -188,16 +188,14 @@
     <wire from="(190,300)" to="(190,330)"/>
     <wire from="(210,260)" to="(210,370)"/>
     <wire from="(210,370)" to="(470,370)"/>
-    <wire from="(300,250)" to="(300,430)"/>
-    <wire from="(300,430)" to="(470,430)"/>
+    <wire from="(300,250)" to="(300,400)"/>
+    <wire from="(300,400)" to="(470,400)"/>
     <wire from="(340,250)" to="(340,280)"/>
-    <wire from="(340,280)" to="(340,420)"/>
     <wire from="(340,280)" to="(790,280)"/>
-    <wire from="(340,420)" to="(470,420)"/>
-    <wire from="(380,250)" to="(380,410)"/>
-    <wire from="(380,410)" to="(470,410)"/>
-    <wire from="(470,440)" to="(470,450)"/>
-    <wire from="(710,440)" to="(710,450)"/>
+    <wire from="(380,250)" to="(380,390)"/>
+    <wire from="(380,390)" to="(470,390)"/>
+    <wire from="(470,420)" to="(470,450)"/>
+    <wire from="(710,420)" to="(710,450)"/>
     <wire from="(710,450)" to="(780,450)"/>
     <wire from="(790,280)" to="(790,440)"/>
     <wire from="(800,450)" to="(850,450)"/>

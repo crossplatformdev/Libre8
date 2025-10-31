@@ -11,8 +11,6 @@
 #include <cmath>
 #include <climits>
 
-unsigned long long byteCount = 0;
-
 // VGA 256-color palette
 void vga256_palette(std::vector<std::tuple<int, int, int>>& palette) {
     palette.resize(256);
@@ -121,6 +119,7 @@ bool readJPGRGB(const std::string& filename,
         int pr, pg, pb;
         int vga_index;
         int prev_vga_index;
+        unsigned long long byteCount = 0;
     for(unsigned int y = 0; y < height; y++) {
         jpeg_read_scanlines(&cinfo, buffer, 1); // <-- Llama aquí por cada fila
         for (unsigned int x = 0; x < width; x++) {
@@ -136,21 +135,20 @@ bool readJPGRGB(const std::string& filename,
             
             prev_vga_index = vga_index;
             pr = r; pg = g; pb = b;
-
+            
+            
+            if (byteCount % 48 == 0) {
+                outputFile << "\n";
+            } 
             
             if (byteCount % 64 == 0) {
                 outputFile << "95 ";
                 byteCount++;
-                if (byteCount % 48 == 0) {
-                    outputFile << "\n";
-                }
-            }
-
+            } 
+            
             outputFile << std::hex << (vga_index < 16 ? "0" : "") << vga_index << " ";
             byteCount++;
-            if (byteCount % 48 == 0) {
-                outputFile << "\n";
-            }
+           
         }     
     }
    

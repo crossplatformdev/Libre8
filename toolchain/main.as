@@ -3,283 +3,270 @@
 ;;;;;;;;;;;;;;;
 .data
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; GLYPHS: _00 00001100 00 - _ff 000011ff ff ;;
+;; GLYPHS: _00 00600000h 00 - _ff 006000ffh ff ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-_00 000010ff 0
-_01 00001100 1
-_02 00001101 2
-_03 00001102 3
-_04 00001103 4
-_05 00001104 5
-_06 00001105 6
-_07 00001106 7
-_08 00001107 8
-_09 00001108 9
-_0a 00001109 10
-_0b 0000110a 11
-_0c 0000110b 12
-_0d 0000110c 13
-_0e 0000110d 14
-_0f 0000110e 15
-_10 0000110f 16
-_11 00001110 17
-_12 00001111 18
-_13 00001112 19
-_14 00001113 20
-_15 00001114 21
-_16 00001115 22
-_17 00001116 23
-_18 00001117 24
-_19 00001118 25
-_1a 00001119 26
-_1b 0000111a 27
-_1c 0000111b 28
-_1d 0000111c 29
-_1e 0000111d 30
-_1f 0000111e 31
-_20 0000111f 32
-_21 00001120 33
-_22 00001121 34
-_23 00001122 35
-_24 00001123 36
-_25 00001124 37
-_26 00001125 38
-_27 00001126 39
-_28 00001127 40
-_29 00001128 41
-_2a 00001129 42
-_2b 0000112a 43
-_2c 0000112b 44
-_2d 0000112c 45
-_2e 0000112d 46
-_2f 0000112e 47
-_30 0000112f 48
-_31 00001130 49
-_32 00001131 50
-_33 00001132 51
-_34 00001133 52
-_35 00001134 53
-_36 00001135 54
-_37 00001136 55
-_38 00001137 56
-_39 00001138 57
-_3a 00001139 58
-_3b 0000113a 59
-_3c 0000113b 60
-_3d 0000113c 61
-_3e 0000113d 62
-_3f 0000113e 63
-_40 0000113f 64
-_41 00001140 65
-_42 00001141 66
-_43 00001142 67
-_44 00001143 68
-_45 00001144 69
-_46 00001145 70
-_47 00001146 71
-_48 00001147 72
-_49 00001148 73
-_4a 00001149 74
-_4b 0000114a 75
-_4c 0000114b 76
-_4d 0000114c 77
-_4e 0000114d 78
-_4f 0000114e 79
-_50 0000114f 80
-_51 00001150 81
-_52 00001151 82
-_53 00001152 83
-_54 00001153 84
-_55 00001154 85
-_56 00001155 86
-_57 00001156 87
-_58 00001157 88
-_59 00001158 89
-_5a 00001159 90
-_5b 0000115a 91
-_5c 0000115b 92
-_5d 0000115c 93
-_5e 0000115d 94
-_5f 0000115e 95
-_60 0000115f 96
-_61 00001160 97
-_62 00001161 98
-_63 00001162 99
-_64 00001163 100
-_65 00001164 101
-_66 00001165 102
-_67 00001166 103
-_68 00001167 104
-_69 00001168 105
-_6a 00001169 106
-_6b 0000116a 107
-_6c 0000116b 108
-_6d 0000116c 109
-_6e 0000116d 110
-_6f 0000116e 111
-_70 0000116f 112
-_71 00001170 113
-_72 00001171 114
-_73 00001172 115
-_74 00001173 116
-_75 00001174 117
-_76 00001175 118
-_77 00001176 119
-_78 00001177 120
-_79 00001178 121
-_7a 00001179 122
-_7b 0000117a 123
-_7c 0000117b 124
-_7d 0000117c 125
-_7e 0000117d 126
-_7f 0000117e 127
-_80 0000117f 128
-_81 00001180 129
-_82 00001181 130
-_83 00001182 131
-_84 00001183 132
-_85 00001184 133
-_86 00001185 134
-_87 00001186 135
-_88 00001187 136
-_89 00001188 137
-_8a 00001189 138
-_8b 0000118a 139
-_8c 0000118b 140
-_8d 0000118c 141
-_8e 0000118d 142
-_8f 0000118e 143
-_90 0000118f 144
-_91 00001190 145
-_92 00001191 146
-_93 00001192 147
-_94 00001193 148
-_95 00001194 149
-_96 00001195 150
-_97 00001196 151
-_98 00001197 152
-_99 00001198 153
-_9a 00001199 154
-_9b 0000119a 155
-_9c 0000119b 156
-_9d 0000119c 157
-_9e 0000119d 158
-_9f 0000119e 159
-_a0 0000119f 160
-_a1 000011a0 161
-_a2 000011a1 162
-_a3 000011a2 163
-_a4 000011a3 164
-_a5 000011a4 165
-_a6 000011a5 166
-_a7 000011a6 167
-_a8 000011a7 168
-_a9 000011a8 169
-_aa 000011a9 170
-_ab 000011aa 171
-_ac 000011ab 172
-_ad 000011ac 173
-_ae 000011ad 174
-_af 000011ae 175
-_b0 000011af 176
-_b1 000011b0 177
-_b2 000011b1 178
-_b3 000011b2 179
-_b4 000011b3 180
-_b5 000011b4 181
-_b6 000011b5 182
-_b7 000011b6 183
-_b8 000011b7 184
-_b9 000011b8 185
-_ba 000011b9 186
-_bb 000011ba 187
-_bc 000011bb 188
-_bd 000011bc 189
-_be 000011bd 190
-_bf 000011be 191
-_c0 000011bf 192
-_c1 000011c0 193
-_c2 000011c1 194
-_c3 000011c2 195
-_c4 000011c3 196
-_c5 000011c4 197
-_c6 000011c5 198
-_c7 000011c6 199
-_c8 000011c7 200
-_c9 000011c8 201
-_ca 000011c9 202
-_cb 000011ca 203
-_cc 000011cb 204
-_cd 000011cc 205
-_ce 000011cd 206
-_cf 000011ce 207
-_d0 000011cf 208
-_d1 000011d0 209
-_d2 000011d1 210
-_d3 000011d2 211
-_d4 000011d3 212
-_d5 000011d4 213
-_d6 000011d5 214
-_d7 000011d6 215
-_d8 000011d7 216
-_d9 000011d8 217
-_da 000011d9 218
-_db 000011da 219
-_dc 000011db 220
-_dd 000011dc 221
-_de 000011dd 222
-_df 000011de 223
-_e0 000011df 224
-_e1 000011e0 225
-_e2 000011e1 226
-_e3 000011e2 227
-_e4 000011e3 228
-_e5 000011e4 229
-_e6 000011e5 230
-_e7 000011e6 231
-_e8 000011e7 232
-_e9 000011e8 233
-_ea 000011e9 234
-_eb 000011ea 235
-_ec 000011eb 236
-_ed 000011ec 237
-_ee 000011ed 238
-_ef 000011ee 239
-_f0 000011ef 240
-_f1 000011f0 241
-_f2 000011f1 242
-_f3 000011f2 243
-_f4 000011f3 244
-_f5 000011f4 245
-_f6 000011f5 246
-_f7 000011f6 247
-_f8 000011f7 248
-_f9 000011f8 249
-_fa 000011f9 250
-_fb 000011fa 251
-_fc 000011fb 252
-_fd 000011fc 253
-_fe 000011fd 254
-_ff 000011fe 255
+_00 000010ffh 00
+_01 00001100h 01
+_02 00001101h 02
+_03 00001102h 03
+_04 00001103h 04
+_05 00001104h 05
+_06 00001105h 06
+_07 00001106h 07
+_08 00001107h 08
+_09 00001108h 09
+_0a 00001109h 0a
+_0b 0000110ah 0b
+_0c 0000110bh 0c
+_0d 0000110ch 0d
+_0e 0000110dh 0e
+_0f 0000110eh 0f
+_10 0000110fh 10
+_11 00001110h 11
+_12 00001111h 12
+_13 00001112h 13
+_14 00001113h 14
+_15 00001114h 15
+_16 00001115h 16
+_17 00001116h 17
+_18 00001117h 18
+_19 00001118h 19
+_1a 00001119h 1a
+_1b 0000111ah 1b
+_1c 0000111bh 1c
+_1d 0000111ch 1d
+_1e 0000111dh 1e
+_1f 0000111eh 1f
+_20 0000111fh 20
+_21 00001120h 21
+_22 00001121h 22
+_23 00001122h 23
+_24 00001123h 24
+_25 00001124h 25
+_26 00001125h 26
+_27 00001126h 27
+_28 00001127h 28
+_29 00001128h 29
+_2a 00001129h 2a
+_2b 0000112ah 2b
+_2c 0000112bh 2c
+_2d 0000112ch 2d
+_2e 0000112dh 2e
+_2f 0000112eh 2f
+_30 0000112fh 30
+_31 00001130h 31
+_32 00001131h 32
+_33 00001132h 33
+_34 00001133h 34
+_35 00001134h 35
+_36 00001135h 36
+_37 00001136h 37
+_38 00001137h 38
+_39 00001138h 39
+_3a 00001139h 3a
+_3b 0000113ah 3b
+_3c 0000113bh 3c
+_3d 0000113ch 3d
+_3e 0000113dh 3e
+_3f 0000113eh 3f
+_40 0000113fh 40
+_41 00001140h 41
+_42 00001141h 42
+_43 00001142h 43
+_44 00001143h 44
+_45 00001144h 45
+_46 00001145h 46
+_47 00001146h 47
+_48 00001147h 48
+_49 00001148h 49
+_4a 00001149h 4a
+_4b 0000114ah 4b
+_4c 0000114bh 4c
+_4d 0000114ch 4d
+_4e 0000114dh 4e
+_4f 0000114eh 4f
+_50 0000114fh 50
+_51 00001150h 51
+_52 00001151h 52
+_53 00001152h 53
+_54 00001153h 54
+_55 00001154h 55
+_56 00001155h 56
+_57 00001156h 57
+_58 00001157h 58
+_59 00001158h 59
+_5a 00001159h 5a
+_5b 0000115ah 5b
+_5c 0000115bh 5c
+_5d 0000115ch 5d
+_5e 0000115dh 5e
+_5f 0000115eh 5f
+_60 0000115fh 60
+_61 00001160h 61
+_62 00001161h 62
+_63 00001162h 63
+_64 00001163h 64
+_65 00001164h 65
+_66 00001165h 66
+_67 00001166h 67
+_68 00001167h 68
+_69 00001168h 69
+_6a 00001169h 6a
+_6b 0000116ah 6b
+_6c 0000116bh 6c
+_6d 0000116ch 6d
+_6e 0000116dh 6e
+_6f 0000116eh 6f
+_70 0000116fh 70
+_71 00001170h 71
+_72 00001171h 72
+_73 00001172h 73
+_74 00001173h 74
+_75 00001174h 75
+_76 00001175h 76
+_77 00001176h 77
+_78 00001177h 78
+_79 00001178h 79
+_7a 00001179h 7a
+_7b 0000117ah 7b
+_7c 0000117bh 7c
+_7d 0000117ch 7d
+_7e 0000117dh 7e
+_7f 0000117eh 7f
+_80 0000117fh 80
+_81 00001180h 81
+_82 00001181h 82
+_83 00001182h 83
+_84 00001183h 84
+_85 00001184h 85
+_86 00001185h 86
+_87 00001186h 87
+_88 00001187h 88
+_89 00001188h 89
+_8a 00001189h 8a
+_8b 0000118ah 8b
+_8c 0000118bh 8c
+_8d 0000118ch 8d
+_8e 0000118dh 8e
+_8f 0000118eh 8f
+_90 0000118fh 90
+_91 00001190h 91
+_92 00001191h 92
+_93 00001192h 93
+_94 00001193h 94
+_95 00001194h 95
+_96 00001195h 96
+_97 00001196h 97
+_98 00001197h 98
+_99 00001198h 99
+_9a 00001199h 9a
+_9b 0000119ah 9b
+_9c 0000119bh 9c
+_9d 0000119ch 9d
+_9e 0000119dh 9e
+_9f 0000119eh 9f
+_a0 0000119fh a0
+_a1 000011a0h a1
+_a2 000011a1h a2
+_a3 000011a2h a3
+_a4 000011a3h a4
+_a5 000011a4h a5
+_a6 000011a5h a6
+_a7 000011a6h a7
+_a8 000011a7h a8
+_a9 000011a8h a9
+_aa 000011a9h aa
+_ab 000011aah ab
+_ac 000011abh ac
+_ad 000011ach ad
+_ae 000011adh ae
+_af 000011aeh af
+_b0 000011afh b0
+_b1 000011b0h b1
+_b2 000011b1h b2
+_b3 000011b2h b3
+_b4 000011b3h b4
+_b5 000011b4h b5
+_b6 000011b5h b6
+_b7 000011b6h b7
+_b8 000011b7h b8
+_b9 000011b8h b9
+_ba 000011b9h ba
+_bb 000011bah bb
+_bc 000011bbh bc
+_bd 000011bch bd
+_be 000011bdh be
+_bf 000011beh bf
+_c0 000011bfh c0
+_c1 000011c0h c1
+_c2 000011c1h c2
+_c3 000011c2h c3
+_c4 000011c3h c4
+_c5 000011c4h c5
+_c6 000011c5h c6
+_c7 000011c6h c7
+_c8 000011c7h c8
+_c9 000011c8h c9
+_ca 000011c9h ca
+_cb 000011cah cb
+_cc 000011cbh cc
+_cd 000011cch cd
+_ce 000011cdh ce
+_cf 000011ceh cf
+_d0 000011cfh d0
+_d1 000011d0h d1
+_d2 000011d1h d2
+_d3 000011d2h d3
+_d4 000011d3h d4
+_d5 000011d4h d5
+_d6 000011d5h d6
+_d7 000011d6h d7
+_d8 000011d7h d8
+_d9 000011d8h d9
+_da 000011d9h da
+_db 000011dah db
+_dc 000011dbh dc
+_dd 000011dch dd
+_de 000011ddh de
+_df 000011deh df
+_e0 000011dfh e0
+_e1 000011e0h e1
+_e2 000011e1h e2
+_e3 000011e2h e3
+_e4 000011e3h e4
+_e5 000011e4h e5
+_e6 000011e5h e6
+_e7 000011e6h e7
+_e8 000011e7h e8
+_e9 000011e8h e9
+_ea 000011e9h ea
+_eb 000011eah eb
+_ec 000011ebh ec
+_ed 000011ech ed
+_ee 000011edh ee
+_ef 000011eeh ef
+_f0 000011efh f0
+_f1 000011f0h f1
+_f2 000011f1h f2
+_f3 000011f2h f3
+_f4 000011f3h f4
+_f5 000011f4h f5
+_f6 000011f5h f6
+_f7 000011f6h f7
+_f8 000011f7h f8
+_f9 000011f8h f9
+_fa 000011f9h fa
+_fb 000011fah fb
+_fc 000011fbh fc
+_fd 000011fch fd
+_fe 000011fdh fe
+_ff 000011feh ff
 ;;;;;;;;;;;;;;;
 ;; GLYPHS END ;;
 ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;
 ;; VARIABLES ;;
 ;;;;;;;;;;;;;;;
-ball_x 00030000 32
-ball_y 0002ffff 16
-ball_dx 0002fffe 1
-ball_dy 0002fffd 1
-paddle_left 0002fffc 12
-paddle_right 0002fffb 12
-score_left 0002fffa 0
-score_right 0002fff9 0
-frame 0002fff8 0
-keys 0002fff7 0
-left_move 0002fff6 0
-right_move 0002fff5 0
-i 0002fff4 00
 ;;;;;;;;;;;;;;;
 ;; VARIABLES END ;;
 ;;;;;;;;;;;;;;;
@@ -292,166 +279,242 @@ i 0002fff4 00
 ;;;;;;;;;;;;;;;
 ;; FUNCTIONS ;;
 ;;;;;;;;;;;;;;;
-set_pixel 00050000 x y color
-clear_screen 0004f000
-read_keypad 0004e000
-draw_paddle 0004d000 x y
-draw_ball 0004c000 x y
-pong_game 0004b000
-main 0004a000
+fibonacci 006f0000h n           ;;  function offset
+is_prime 006ec000h n            ;;  function offset
+prime_nth 006e8000h n           ;;  function offset
+main 006e4000h                  ;;  function offset
 ;;;;;;;;;;;;;;;
 ;; DATA END ;;
 ;;;;;;;;;;;;;;;
-__for_top_2 0002fff3 2048       ;;  For loop top value
-__for_inc_2 0002fff2 01         ;;  For loop step
-__for_end_2 00049000            ;;  For loop end
-__for_start_2 00045000          ;;  For loop start
-__for_init_2 00041000           ;;  For loop initialization
+fibonacci_n 001f0000h
+is_prime_n 001effffh
+__for_top_3 001efffeh 02        ;;  For loop top value
+__for_inc_3 001efffdh 00        ;;  For loop step
+__for_end_3 006e0000h           ;;  For loop end
+__for_start_3 006dc000h         ;;  For loop start
+__for_init_3 006d8000h          ;;  For loop initialization
+prime_nth_n 001efffch
+__for_top_7 001efffbh 00        ;;  For loop top value
+__for_inc_7 001efffah 00        ;;  For loop step
+__for_end_7 006d4000h           ;;  For loop end
+__for_start_7 006d0000h         ;;  For loop start
+__for_init_7 006cc000h          ;;  For loop initialization
 
 ;;;;;;;;;;;;;;;;
 ;; CODE BEGIN ;;
 ;;;;;;;;;;;;;;;;
 .code
 B main ;; Branch to main function
-JMP 00000000 ;; Jump to end of code section (placeholder for main function)
+JMP 00000000h ;; Jump to end of code section (placeholder for main function)
 ;;;;;;;;;;;;;;;
-;; BEGIN set_pixel ;;
-.set_pixel
-                                ;;  Argument: x
-                                ;;  Argument: y
-                                ;;  Argument: color
-                                ;;  If condition: x >= 0 && x < 64 && y >= 0 && y < 32
-                                ;;  Conditional code for: x >= 0 && x < 64 && y >= 0 && y < 32 
-;;  Complex condition - simplified
-POKX x
-POKY y
-POKE color
+;; BEGIN fibonacci ;;
+.fibonacci
+                                ;;  Argument: n
+POPX fibonacci_n                ;;  Pop the argument from the stack
+STA fibonacci_n                 ;;  Store argument in variable
+                                ;;  If condition: n == 0
+                                ;;  Conditional code for: n == 0 
+LDA n ;;  Load left side of condition
+SUB _00 ;;  Subtract right side of condition
+BZ  ;;  Branch to destination label if zero
+BX n                            ;;  Return
+                                ;;  If condition: } n == 1
+                                ;;  Conditional code for: } n == 1 
+LDA } n ;;  Load left side of condition
+SUB _01 ;;  Subtract right side of condition
+BZ  ;;  Branch to destination label if zero
+BX n                            ;;  Return
+                                ;;  Else block code for: int n_minus_1 = fibonacci
+LDA _01 ;;  Load left side of condition
+SUB } n ;;  Subtract right side of condition
+BNZ fibonacci ;;  Branch to else label if zero
+LDA n
+SUB _01
+STA n_minus_1
+LDA n
+SUB _02
+STA n_minus_2
+LDA n_minus_1
+ADD n_minus_2
+STA result
+BX result                       ;;  Return
+                                ;;  End of block
 ;;;;;;;;;;;;;;;
-;; END set_pixel ;;
+;; END fibonacci ;;
 ;;;;;;;;;;;;;;;
-;; BEGIN clear_screen ;;
-.clear_screen
-                                ;;  ENTERING FOR LOOP: __asm {
-POKX i
-POKE 0
-B __for_init_2                  ;;  Branch to for loop start
-                                ;;  For loop: __for_start_2
-                                ;;  Initialization: i = 00
-                                ;;  Condition: (i < __for_top_2)
-                                ;;  Increment: i++
-                                ;;  Loop end: __for_end_2
-.__for_init_2
-LDA _00                         ;;  Load the variable value
+;; BEGIN is_prime ;;
+.is_prime
+                                ;;  Argument: n
+POPX is_prime_n                 ;;  Pop the argument from the stack
+STA is_prime_n                  ;;  Store argument in variable
+                                ;;  If condition: n <= 1
+                                ;;  Conditional code for: n <= 1 
+LDA n ;;  Load left side of condition
+SUB = 1 ;;  Subtract right side of condition
+BB  ;;  Branch to destination label if less than
+BX _00                          ;;  Return
+                                ;;  End of block
+                                ;;  ENTERING FOR LOOP: int temp = n;
+B __for_init_3                  ;;  Branch to for loop start
+                                ;;  For loop: __for_start_3
+                                ;;  Initialization: i = 02
+                                ;;  Condition: (i < __for_top_3)
+                                ;;  Increment: i = i + 1
+                                ;;  Loop end: __for_end_3
+.__for_init_3
+LDA _02                         ;;  Load the variable value
 STA i                           ;;  Store the updated value back to the variable
-JMP __for_start_2               ;;  Jump to loop start
-.__for_start_2
+JMP __for_start_3               ;;  Jump to loop start
+.__for_start_3
 LDA i                           ;;  Load the variable value for condition check
-ADD __for_inc_2                 ;;  Subtract condition value
+ADD __for_inc_3                 ;;  Subtract condition value
 STA i                           ;;  Jump to loop end if condition is zero
-                                ;;  If condition: i < __for_top_2
-                                ;;  Conditional code for: i < __for_top_2 
-LDA i ;;  Load left side
-SUB _00 ;;  Subtract right side
-BB if_2 ;;  Branch if less than
-                                ;;  Else block code for: __asm __for_end_2
-;;  Complex condition - skipping else generation
-;;  Unsupported operator for else: <
-.__for_end_2
+                                ;;  If condition: i < __for_top_3
+                                ;;  Conditional code for: i < __for_top_3 
+LDA i ;;  Load left side of condition
+SUB __for_top_3 ;;  Subtract right side of condition
+BB int temp = n; ;;  Branch to destination label if less than
+                                ;;  Else block code for: __asm __for_end_3
+LDA = 1 ;;  Load left side of condition
+SUB n ;;  Subtract right side of condition
+JB  __for_end_3 ;;  Branch to else label if less than or equal
+.__for_end_3
 BX _00                          ;;  Return from function
-POKX i
-POKE 0
+LDA _69                         ;;  Load the argument
+STA  while (temp >              ;;  Store value from A into while (temp >
+LDA temp
+SUB i
+STA temp
+                                ;;  End of block
+                                ;;  If condition: temp == 0
+                                ;;  Conditional code for: temp == 0 
+LDA temp ;;  Load left side of condition
+SUB _00 ;;  Subtract right side of condition
+BZ  ;;  Branch to destination label if zero
+BX _00                          ;;  Return
+                                ;;  End of block
+                                ;;  End of block
+BX _01                          ;;  Return
 ;;;;;;;;;;;;;;;
-;; END clear_screen ;;
+;; END is_prime ;;
 ;;;;;;;;;;;;;;;
-;; BEGIN read_keypad ;;
-.read_keypad
-PIKX REG_KEYPAD
-OUTA
+;; BEGIN prime_nth ;;
+.prime_nth
+                                ;;  Argument: n
+POPX prime_nth_n                ;;  Pop the argument from the stack
+STA prime_nth_n                 ;;  Store argument in variable
+LDA _30                         ;;  Load the argument
+STA  int count                  ;;  Store value from A into int count
+LDA _31                         ;;  Load the argument
+STA  int candidate              ;;  Store value from A into int candidate
+LDA count < n                   ;;  Load the argument
+PSAX                            ;;  Push the argument onto the stack
+B while                         ;;  Call the function
+LDA candidate
+ADD _01
+STA candidate
+                                ;;  If condition: is_prime(candidate) == 1
+                                ;;  Conditional code for: is_prime(candidate) == 1 
+LDA candidate ;;  Load function argument
+STA candidate_arg ;;  Store argument for function
+B candidate ;;  Call function to get left side value
+SUB _01 ;;  Subtract right side of condition
+BZ  ;;  Branch to destination label if zero
+LDA count
+ADD _01
+STA count
+                                ;;  End of block
+                                ;;  End of block
+BX candidate                    ;;  Return
 ;;;;;;;;;;;;;;;
-;; END read_keypad ;;
-;;;;;;;;;;;;;;;
-;; BEGIN draw_paddle ;;
-.draw_paddle
-                                ;;  Argument: x
-                                ;;  Argument: y
-;;;;;;;;;;;;;;;
-;; END draw_paddle ;;
-;;;;;;;;;;;;;;;
-;; BEGIN draw_ball ;;
-.draw_ball
-                                ;;  Argument: x
-                                ;;  Argument: y
-;;;;;;;;;;;;;;;
-;; END draw_ball ;;
-;;;;;;;;;;;;;;;
-;; BEGIN pong_game ;;
-.pong_game
-LDA _00                         ;;  Load value
-STA frame                       ;;  Store value
-B read_keypad                   ;;  Call function
-STA keys                        ;;  Store return value
-LDA _00                         ;;  Load value
-STA left_move                   ;;  Store value
-LDA _00                         ;;  Load value
-STA right_move                  ;;  Store value
-LDA paddle_left
-ADD left_move
-STA paddle_left
-LDA paddle_right
-ADD right_move
-STA paddle_right
-                                ;;  If condition: paddle_left < 0
-                                ;;  Conditional code for: paddle_left < 0 
-LDA paddle_left ;;  Load left side
-SUB _00 ;;  Subtract right side
-BB if_5 ;;  Branch if less than
-                                ;;  If condition: paddle_left > 27
-                                ;;  Conditional code for: paddle_left > 27 
-LDA _1b ;;  Load right side
-SUB paddle_left ;;  Subtract left side
-BB if_7 ;;  Branch if greater than
-                                ;;  If condition: paddle_right < 0
-                                ;;  Conditional code for: paddle_right < 0 
-LDA paddle_right ;;  Load left side
-SUB _00 ;;  Subtract right side
-BB if_9 ;;  Branch if less than
-                                ;;  If condition: paddle_right > 27
-                                ;;  Conditional code for: paddle_right > 27 
-LDA _1b ;;  Load right side
-SUB paddle_right ;;  Subtract left side
-BB if_12 ;;  Branch if greater than
-LDA ball_x
-ADD ball_dx
-STA ball_x
-LDA ball_y
-ADD ball_dy
-STA ball_y
-                                ;;  If condition: ball_y <= 0
-                                ;;  Conditional code for: ball_y <= 0 
-LDA _00 ;;  Load right side
-SUB ball_y ;;  Subtract left side
-BNB if_14 ;;  Branch if less than or equal
-                                ;;  If condition: ball_y >= 31
-                                ;;  Conditional code for: ball_y >= 31 
-LDA ball_y ;;  Load left side
-SUB _1f ;;  Subtract right side
-BNB if_16 ;;  Branch if greater than or equal
-                                ;;  If condition: ball_x == 1
-                                ;;  Conditional code for: ball_x == 1 
-LDA ball_x ;;  Load left side
-SUB _01 ;;  Subtract right side
-BZ if_18 ;;  Branch if equal
-                                ;;  If condition: ball_y >= paddle_left && ball_y <= paddle_left + 4
-                                ;;  Conditional code for: ball_y >= paddle_left && ball_y <= paddle_left + 4 
-;;  Complex condition - simplified
-LDA _01                         ;;  Load value
-STA ball_dx                     ;;  Store value
-;;;;;;;;;;;;;;;
-;; END pong_game ;;
+;; END prime_nth ;;
 ;;;;;;;;;;;;;;;
 ;; BEGIN main ;;
 .main
-B pong_game                     ;;  Call the function
+                                ;;  ENTERING FOR LOOP: a = prime_nth
+B __for_init_7                  ;;  Branch to for loop start
+                                ;;  For loop: __for_start_7
+                                ;;  Initialization: i = 00
+                                ;;  Condition: (i < __for_top_7)
+                                ;;  Increment: i = i + 1
+                                ;;  Loop end: __for_end_7
+.__for_init_7
+LDA _00                         ;;  Load the variable value
+STA i                           ;;  Store the updated value back to the variable
+JMP __for_start_7               ;;  Jump to loop start
+.__for_start_7
+LDA i                           ;;  Load the variable value for condition check
+ADD __for_inc_7                 ;;  Subtract condition value
+STA i                           ;;  Jump to loop end if condition is zero
+                                ;;  If condition: i < __for_top_7
+                                ;;  Conditional code for: i < __for_top_7 
+LDA i ;;  Load left side of condition
+SUB __for_top_7 ;;  Subtract right side of condition
+BB a = prime_nth ;;  Branch to destination label if less than
+                                ;;  Else block code for: __asm __for_end_7
+LDA _01 ;;  Load left side of condition
+SUB is_prime(candidate) ;;  Subtract right side of condition
+JNZ  __for_end_7 ;;  Branch to else label if not zero
+.__for_end_7
+BX _00                          ;;  Return from function
+LDA _66                         ;;  Load the argument
+STA  b                          ;;  Store value from A into b
+.print_f_0                      ;;  Handling printf statement
+LDA _50                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _72                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _69                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _6d                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _65                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _20                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA i                           ;;  Load int argument
+OUTD                            ;;  Output int
+LDA _3a                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _20                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA a                           ;;  Load int argument
+OUTD                            ;;  Output int
+LDA _2c                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _20                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _46                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _69                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _62                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _6f                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _6e                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _61                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _63                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _63                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _69                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _20                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA i                           ;;  Load int argument
+OUTD                            ;;  Output int
+LDA _3a                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA _20                         ;;  Load literal character
+OUT                             ;;  Output literal character
+LDA b                           ;;  Load int argument
+OUTD                            ;;  Output int
+LDA _0a                         ;;  Load newline character
+OUT                             ;;  Output newline
+                                ;;  End of block
 BX _00                          ;;  Return
 BX _00                          ;;  Return from main
 ;;;;;;;;;;;;;;;

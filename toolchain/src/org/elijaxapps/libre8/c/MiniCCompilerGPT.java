@@ -14,17 +14,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Baremetal C Compiler for Libre8 Architecture
- * Supports hardware-specific programming without OS dependencies
- */
 public class MiniCCompilerGPT {
 
-    // Memory layout for Libre8 baremetal environment
-    private static final int BASE_VAR_OFFSET = 0x00030000;  // Stack area
-    private static final int BASE_STR_OFFSET = 0x00040000;  // String storage
-    private static final int BASE_FUNC_OFFSET = 0x00050000; // Function code
-    private static final int GLYPH_BASE_OFFSET = 0x000010ff; // Character glyphs
+    private static final int BASE_VAR_OFFSET = 0x001f0000;
+    private static final int BASE_STR_OFFSET = 0x003f0000;
+    private static final int BASE_FUNC_OFFSET = 0x006f0000;
+    private static final int GLYPH_BASE_OFFSET = 0x000010ff;
 
     private static int varOffset = BASE_VAR_OFFSET;
     private static int strOffset = BASE_STR_OFFSET;
@@ -37,6 +32,7 @@ public class MiniCCompilerGPT {
 
     private static final List<String> dataSection = new ArrayList<>();
     private static final List<String> codeSection = new ArrayList<>();
+    private static final List<String> printfCodeSection = new ArrayList<>();
 
     private static final Map<String, Integer> variables = new LinkedHashMap<>();
     private static final Map<String, String> initialValues = new LinkedHashMap<>();
@@ -48,50 +44,26 @@ public class MiniCCompilerGPT {
 
     private static boolean noIfElse = false;
     private static final Map<String, List<String>> conditions = new LinkedHashMap<>();
-
+    private static int printfCounter = 0;
     public static void main(String[] args) throws IOException {
-        System.out.println("Libre8 Baremetal C Compiler - Generating Assembly");
         String input = readFile("C_example.c");
-        input = preprocessSource(input);
         parseGlobals(input);
         parseFunctions(input);
+        //parseVariables(input);
         generateDataSection();
         generateCodeSection();
         saveToFile("main.as");
-        System.out.println("Compilation complete. Output: main.as");
     }
 
     public static void run(String filename) throws IOException {
         if (filename == null || filename.isEmpty()) filename = "C_example.c";
         String input = readFile(filename);
-        input = preprocessSource(input);
         parseGlobals(input);
         parseFunctions(input);
+        //parseVariables(input);
         generateDataSection();
         generateCodeSection();
         saveToFile("main.as");
-    }
-
-    // Preprocess C source: remove comments, handle #defines, #includes
-    private static String preprocessSource(String src) {
-        // Remove single-line comments
-        src = src.replaceAll("//.*", "");
-        // Remove multi-line comments
-        src = src.replaceAll("/\\*[\\s\\S]*?\\*/", "");
-        // Handle simple #define constants
-        Pattern definePattern = Pattern.compile("#define\\s+(\\w+)\\s+(\\d+)");
-        Matcher defineMatcher = definePattern.matcher(src);
-        Map<String, String> defines = new LinkedHashMap<>();
-        while (defineMatcher.find()) {
-            defines.put(defineMatcher.group(1), defineMatcher.group(2));
-        }
-        // Replace #defines in source
-        for (Map.Entry<String, String> def : defines.entrySet()) {
-            src = src.replaceAll("\\b" + def.getKey() + "\\b", def.getValue());
-        }
-        // Remove preprocessor directives
-        src = src.replaceAll("#.*", "");
-        return src;
     }
 
     private static String readFile(String filename) throws IOException {
@@ -104,41 +76,28 @@ public class MiniCCompilerGPT {
     }
 
     private static void parseGlobals(String src) {
-        // Parse only global variable declarations (not function declarations)
-        Pattern pattern = Pattern.compile("^\\s*(int|char|uint8|uint16|uint32)\\s+(\\w+)\\s*=\\s*([^;]+);", Pattern.MULTILINE);
+        Pattern pattern = Pattern.compile("(int|char)\\s+(\\*?\\w+\\[\\d*\\])\\s*=\\s*([^;]+);");
         Matcher matcher = pattern.matcher(src);
         while (matcher.find()) {
             String type = matcher.group(1);
             String name = matcher.group(2);
             String value = matcher.group(3).trim();
 
-            // Handle baremetal types
-            if (type.equals("char") || type.equals("uint8")) {
-                int val = 0;
-                if (value.startsWith("'")) {
-                    val = (int) value.charAt(1);
-                } else if (value.startsWith("0x")) {
-                    val = Integer.parseInt(value.substring(2), 16);
-                } else if (value.matches("\\d+")) {
-                    val = Integer.parseInt(value);
+            
+            //If is array...
+            if (name.endsWith("[]")) {
+                Integer arr_length = name.contains("[") ? Integer.parseInt(name.substring(name.indexOf("[") + 1, name.indexOf("]"))) : 0;
+                for (int i = 0; i < arr_length; i++) {
+                    String varName = name.substring(0, name.indexOf("[")) + "_" + i;
+                    while (variables.containsKey(varName)) varName += "_";
+                    variables.put(varName, varOffset--);
+                    initialValues.put(varName, "00");
                 }
+            } else if (type.equals("char") && !name.startsWith("*")) {
+                int val = value.startsWith("'") ? (int) value.charAt(1) : Integer.parseInt(value);
                 variables.put(name, varOffset--);
-                initialValues.put(name, String.valueOf(val & 0xFF));
-            } else if (type.equals("int") || type.equals("uint16") || type.equals("uint32")) {
-                variables.put(name, varOffset--);
-                int val = 0;
-                if (value.startsWith("0x")) {
-                    val = Integer.parseInt(value.substring(2), 16);
-                } else if (value.matches("\\d+")) {
-                    val = Integer.parseInt(value);
-                } else {
-                    // Expression or reference - set to 0 initially
-                    val = 0;
-                }
-                String decimalValue = String.valueOf(val & 0xFF);
-                initialValues.put(name, decimalValue);
-            } else if (name.startsWith("*") || name.endsWith("[]")) {
-                // String or array handling
+                initialValues.put(name, val < 0 ? "00" : Integer.toString(val, 16));
+            } else if ((type.equals("char") && name.startsWith("*")) || type.equals("char*") || name.endsWith("[]")) {
                 if (name.startsWith("*")) name = name.substring(1);
                 while (variables.containsKey(name)) name += "_";
                 String cleanString = value.replaceAll("\"", "");
@@ -147,80 +106,66 @@ public class MiniCCompilerGPT {
                     String varName = name + i;
                     while (variables.containsKey(varName)) varName += "_";
                     variables.put(varName, strOffset);
-                    initialValues.put(varName, String.format("%02x", (int) cleanString.charAt(i)));
+                    initialValues.put(varName, "'" + cleanString.charAt(i) + "'");
                     strOffset--;
                 }
-            }
-        }
-        
-        // Parse variable declarations without initialization
-        Pattern uninitPattern = Pattern.compile("(int|char|uint8|uint16|uint32)\\s+(\\w+);");
-        Matcher uninitMatcher = uninitPattern.matcher(src);
-        while (uninitMatcher.find()) {
-            String name = uninitMatcher.group(2);
-            if (!variables.containsKey(name)) {
+            } else if (type.equals("int")) {
                 variables.put(name, varOffset--);
-                initialValues.put(name, "00");
+                if (value.matches("\\d+")) {
+                    String hexValue = Integer.toHexString(Integer.parseInt(value));
+                    while (hexValue.length() < 2) hexValue = "0" + hexValue;
+                    initialValues.put(name, hexValue);
+                } else if (value.matches("\\d+\\s*[-+*/]\\s*\\d+")) {
+                    initialValues.put(name, "00");
+                } else if (variables.containsKey(name)) {
+                    initialValues.put(name, "00");
+                } else {
+                    throw new IllegalArgumentException("Unsupported value expression for: " + name);
+                }
+            } else {
+                throw new IllegalArgumentException("Unsupported type: " + type + " for variable: " + name);
             }
         }
     }
 
     private static void parseFunctions(String src) {
-        // Parse function definitions (supports baremetal types and void parameters)
-        Pattern pattern = Pattern.compile("(int|void|char|uint8|uint16|uint32)\\s+(\\w+)\\s*\\(([^)]*)\\)\\s*\\{(.*?)\\}", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("(int|void)\\s+(\\w+)\\s*\\(([^)]*)\\)\\s*\\{(.*?)\\n}", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(src);
         while (matcher.find()) {
-            String returnType = matcher.group(1);
             String name = matcher.group(2);
             String args = matcher.group(3);
             String body = matcher.group(4);
 
             List<String> argList = new ArrayList<>();
-            if (!args.trim().isEmpty() && !args.trim().equals("void")) {
-                for (String arg : args.split(",")) {
-                    String[] parts = arg.trim().split("\\s+");
-                    if (parts.length >= 2) {
-                        argList.add(parts[1]); // Add argument name
-                    }
-                }
+            if (!args.trim().isEmpty()) {
+                for (String arg : args.split(",")) argList.add(arg.trim().split(" ")[1]);
             }
-            
             functionArgs.put(name, argList);
-            // Split function body into lines, preserving structure
-            List<String> bodyLines = new ArrayList<>();
-            for (String line : body.split("\\n")) {
-                String trimmed = line.trim();
-                if (!trimmed.isEmpty()) {
-                    bodyLines.add(trimmed);
-                }
-            }
-            functionBodies.put(name, bodyLines);
+            functionBodies.put(name, Arrays.asList(body.trim().split("\\n")));
             functions.put(name, funcOffset);
-            funcOffset -= 0x1000; // Smaller function spacing for baremetal
-            
-            System.out.println("Parsed function: " + name + " (" + returnType + ") with " + argList.size() + " args");
+            funcOffset -= 0x4000;
         }
     }
 
     private static void generateDataSection() {
         addFormattedDataSection(";;;;;;;;;;;;;;;\n;; DATA BEGIN ;;\n;;;;;;;;;;;;;;;\n.data");
-        addFormattedDataSection(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n;; GLYPHS: _00 00001100 00 - _ff 000011ff ff ;;\n;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
+        addFormattedDataSection(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n;; GLYPHS: _00 00600000h 00 - _ff 006000ffh ff ;;\n;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;");
         for (int i = 0; i <= 255; i++)
-            addFormattedDataSection(String.format("_%02x %08x %d", i, GLYPH_BASE_OFFSET + i, i));
+            addFormattedDataSection(String.format("_%02x %08xh %02x", i, GLYPH_BASE_OFFSET + i, i));
         addFormattedDataSection(";;;;;;;;;;;;;;;\n;; GLYPHS END ;;\n;;;;;;;;;;;;;;;");
         addFormattedDataSection("\n;;;;;;;;;;;;;;;\n;; VARIABLES ;;\n;;;;;;;;;;;;;;;");
         for (Map.Entry<String, Integer> entry : variables.entrySet()) {
             String name = entry.getKey();
             int offset = entry.getValue();
             String val = initialValues.getOrDefault(name, "0");
-            addFormattedDataSection(String.format("%s %08x %s", name, offset, val));
+            addFormattedDataSection(String.format("%s %08xh %s ;; variable initialized", name, offset, val));
         }
         addFormattedDataSection("\n;;;;;;;;;;;;;;;\n;; VARIABLES END ;;\n;;;;;;;;;;;;;;;");
         addFormattedDataSection("\n;;;;;;;;;;;;;;;\n;; STRINGS ;;\n;;;;;;;;;;;;;;;");
         for (Map.Entry<String, String> entry : strings.entrySet()) {
             String name = entry.getKey();
             String value = entry.getValue();
-            addFormattedDataSection(String.format("%s %08x \"%s\"", name, strOffset, value));
+            addFormattedDataSection(String.format("%s %08xh \"%s\" ;; string", name, strOffset, value));
             strOffset -= value.length() + 1;
         }
         addFormattedDataSection("\n;;;;;;;;;;;;;;;\n;; STRINGS END ;;\n;;;;;;;;;;;;;;;");
@@ -228,7 +173,7 @@ public class MiniCCompilerGPT {
         for (Map.Entry<String, Integer> entry : functions.entrySet()) {
             String fn = entry.getKey();
             String args = String.join(" ", functionArgs.get(fn));
-            addFormattedDataSection(String.format("%s %08x %s", fn, entry.getValue(), args));
+            addFormattedDataSection(String.format("%s %08xh %s;; function offset", fn, entry.getValue(), args));
         }
         addFormattedDataSection("\n;;;;;;;;;;;;;;;\n;; DATA END ;;\n;;;;;;;;;;;;;;;");
     }
@@ -239,7 +184,7 @@ public class MiniCCompilerGPT {
                 + ";;;;;;;;;;;;;;;;\n"
                 + ".code\n"
                 + "B main ;; Branch to main function\n"
-                + "JMP 00000000 ;; Jump to end of code section (placeholder for main function)\n");
+                + "JMP 00000000h ;; Jump to end of code section (placeholder for main function)\n");
         for (Map.Entry<String, List<String>> entry : functionBodies.entrySet()) {
             generateCode(entry);
         }
@@ -260,7 +205,12 @@ public class MiniCCompilerGPT {
         addFormattedCodeSection("." + name);
 
         if (!functionArgs.isEmpty()) {
-            for (String arg : functionArgs.get(name)) addFormattedCodeSection(";; Argument: " + arg);
+            for (String arg : functionArgs.get(name)) {                
+                addFormattedDataSection(name + "_" + arg + " " + String.format("%08xh", varOffset--));
+                addFormattedCodeSection(";; Argument: " + arg);
+                addFormattedCodeSection("POPX " + name + "_" + arg + " ;; Pop the argument from the stack");
+                addFormattedCodeSection("STA " + name + "_" + arg + " ;; Store argument in variable");
+            }
         }
         boolean endif = false;
         for (String line : body) {
@@ -274,19 +224,14 @@ public class MiniCCompilerGPT {
             if (trim.isEmpty() || trim.startsWith("__asm") || trim.startsWith(";;")) continue;
 
             if (trim.startsWith("if(") || trim.startsWith("if (")) {
+                trim = trim.replace("if\\s\\(", "");
                 String nextTrim = body.get(body.indexOf(line) + 1).trim();
                 String functionName = "";
                 if (nextTrim.startsWith("__asm")) {
                     functionName = "__asm_" + labelCounter;
                     labelCounter += 1;
-                } else {
-                    int parenIndex = nextTrim.indexOf("(");
-                    if (parenIndex > 0) {
-                        functionName = nextTrim.substring(0, parenIndex).trim();
-                    } else {
-                        functionName = "unknown_func_" + labelCounter;
-                        labelCounter += 1;
-                    }
+                } else if (nextTrim.indexOf("(") > 0) {
+                    functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
                 }
                 addFormattedCodeSection(parseIf(trim, functionName));
                 noIfElse = false;
@@ -294,13 +239,12 @@ public class MiniCCompilerGPT {
             }
 
             if (trim.startsWith("else if(") || trim.startsWith("else if (") || trim.startsWith("} else if (") || trim.startsWith("} else if(") || trim.startsWith("}else if (") || trim.startsWith("}else if(") || trim.startsWith("else{") || trim.startsWith("} else if (")) {
+                trim = trim.replaceAll("else\\s*if\\s*\\(", "");
                 String nextTrim = body.get(body.indexOf(line) + 1).trim();
                 String functionName = "";
                 if (nextTrim.startsWith("__asm")) {
                     functionName = "__asm_" + labelCounter;
                     labelCounter += 1;
-                } else {
-                    functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
                 }
                 addFormattedCodeSection(parseIf(trim, functionName));
                 nextTrim = body.get(body.indexOf(line) + 1).trim();
@@ -319,12 +263,13 @@ public class MiniCCompilerGPT {
             }
 
             if (trim.startsWith("else{") || trim.startsWith("else {") || trim.startsWith("} else {") || trim.startsWith("} else{") || trim.startsWith("}else {") || trim.startsWith("}else{")) {
+                trim = trim.replaceAll("else\\s*\\{", "");
                 String nextTrim = body.get(body.indexOf(line) + 1).trim();
                 String functionName = "";
                 if (nextTrim.startsWith("__asm")) {
                     functionName = "__asm_" + labelCounter;
                     labelCounter += 1;
-                } else {
+                } else if (nextTrim.indexOf("(") > 0) {
                     functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
                 }
                 addFormattedCodeSection(parseElse(trim, functionName));
@@ -355,11 +300,35 @@ public class MiniCCompilerGPT {
             if (trim.startsWith("while(")) {
                 String condition = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
                 String loopStart = "__while_start_" + labelCounter;
-                blockEndLabel.add("__while_end_" + labelCounter);
-                addFormattedDataSection(loopStart + " " + String.format("%08x", funcOffset) + " ;; While loop start");
+                String loopEnd = "__while_end_" + labelCounter;
+                blockEndLabel.add(loopEnd);
+                addFormattedDataSection(loopStart + " " + String.format("%08xh", funcOffset) + "h ;; While loop start");
                 funcOffset -= 0x4000;
+                addFormattedDataSection("__while_body_" + labelCounter + " " + String.format("%08xh", funcOffset) + "h ;; While loop body");
+                funcOffset -= 0x4000;
+                addFormattedDataSection(loopEnd + " " + String.format("%08xh", funcOffset) + "h ;; While loop end");
+                funcOffset -= 0x4000;
+
+                String functionName = "";
+                String nextTrim = body.get(body.indexOf(line) + 1).trim();
+                if (nextTrim.startsWith("__asm")) {
+                    functionName = "__asm_" + labelCounter;
+                    labelCounter += 1;
+                } else if (nextTrim.indexOf("(") > 0) {
+                    functionName = nextTrim.substring(0, nextTrim.indexOf("(")).trim();
+                }
+
+                addFormattedCodeSection("B " + loopStart + " ;; Branch to while loop start");
+                addFormattedCodeSection(";; While loop: " + loopStart);
+                addFormattedCodeSection("." + loopStart);
+                
+                addFormattedCodeSection(parseIf(condition, functionName));
+                addFormattedCodeSection(parseElse(condition, loopEnd));
+                addFormattedCodeSection(";; While loop body");
+
+                continueStack.add(loopStart);
+                breakStack.add(loopEnd);
                 labelCounter++;
-                continue;
             }
 
             if (trim.startsWith("for(") || trim.startsWith("for (")) {
@@ -374,7 +343,7 @@ public class MiniCCompilerGPT {
                 String loopStart = "__for_start_" + labelCounter;
                 String loopEnd = "__for_end_" + labelCounter;
                 String topVal = "__for_top_" + labelCounter;
-                Integer topValValue = Integer.valueOf(cond.replaceAll("\\(", "").replaceAll("\\)", "").trim().split("<|>|==|!=|<=|>=|\\+|-|\\*|/")[1].trim());
+                Integer topValValue = Integer.valueOf(value);
                 String loopBody = "";
 
                 if (topValValue.equals(varname)) {
@@ -398,56 +367,55 @@ public class MiniCCompilerGPT {
                 }
 
                 int counter = 1;
-                int lineIndex = body.indexOf(line);
-                String nextTrim = "";
-                if (lineIndex + counter < body.size()) {
-                    nextTrim = body.get(lineIndex + counter).trim();
-                    if (nextTrim.startsWith("__asm")) {
-                        // Handle inline assembly
-                        //addFormattedDataSection(loopStart + " " + String.format("%08xh", funcOffset) + "h ;; For loop start");
-                        //funcOffset -= 0x4000; // Adjust function offset for next label
-                        while (!nextTrim.equals("}") && lineIndex + counter < body.size()) {
-                            nextTrim = body.get(lineIndex + counter).trim();
-                            loopBody += nextTrim + "\n";
-                            counter++;
-                        }
-                    } else {
-                        loopBody = nextTrim.split("\\(")[0]; // Assuming the loop body is a single line for simplicity
-                    }
+                String nextTrim = body.get(body.indexOf(line) + counter).trim();
+                if (nextTrim.startsWith("__asm")) {
+                    // Handle inline assembly
+                    //addFormattedDataSection(loopStart + " " + String.format("%08xh", funcOffset) + "h ;; For loop start");
+                    //funcOffset -= 0x4000; // Adjust function offset for next label
+                    loopBody = "__asm_" + labelCounter;
+                    counter++;
+                    nextTrim = body.get(body.indexOf(line) + counter).trim();
+                    while (!nextTrim.equals("}")) {
+                        addFormattedCodeSection(nextTrim);
+                        counter++;
+                        nextTrim = body.get(body.indexOf(line) + counter).trim();
+                    }                    
+                } else {
+                    loopBody = nextTrim.split("\\(")[0]; // Assuming the loop body is a single line for simplicity
                 }
 
                 while (value.length() < 2) {
                     value = "0" + value; // Ensure at least two characters for char values
                 }
 
-                addFormattedDataSection(topVal + " " + String.format("%08x", varOffset--) + " " + String.valueOf(topValValue) + " ;; For loop top value");
+                addFormattedDataSection(topVal + " " + String.format("%08xh", varOffset--) + " " + String.format("%02x", topValValue) + ";; For loop top value");
                 if (inc.contains("++")) {
-                    addFormattedDataSection(incVar + " " + String.format("%08x", varOffset--) + " 01 ;; For loop step");
+                    addFormattedDataSection(incVar + " " + String.format("%08xh", varOffset--) + " 01;; For loop step");
                 } else if (inc.contains("--")) {
-                    addFormattedDataSection(incVar + " " + String.format("%08x", varOffset--) + " FF ;; For loop step");
+                    addFormattedDataSection(incVar + " " + String.format("%08xh", varOffset--) + " FF;; For loop step");
                 } else {
                     if (inc.contains("+=")) {
                         String incValue = inc.split("\\+=")[1].trim();
                         if (incValue.length() < 2) {
                             incValue = "0" + incValue; // Ensure at least two characters for char values
                         }
-                        addFormattedDataSection(incVar + " " + String.format("%08x", varOffset--) + " " + String.valueOf(topValValue) + " ;; For loop step");
+                        addFormattedDataSection(incVar + " " + String.format("%08xh", varOffset--) + " " + String.format("%02x", topValValue) + ";; For loop step");
                     } else if (inc.contains("-=")) {
                         String incValue = inc.split("-=")[1].trim();
                         if (incValue.length() < 2) {
                             incValue = "0" + incValue; // Ensure at least two characters for char values
                         }
-                        addFormattedDataSection(incVar + " " + String.format("%08x", varOffset--) + " " + String.valueOf(topValValue) + " ;; For loop step");
+                        addFormattedDataSection(incVar + " " + String.format("%08xh", varOffset--) + " " + String.format("%02x", topValValue) + ";; For loop step");
                     } else {
-                        addFormattedDataSection(incVar + " " + String.format("%08x", varOffset--) + " 00 ;; For loop step");
+                        addFormattedDataSection(incVar + " " + String.format("%08xh", varOffset--) + " 00;; For loop step");
                     }
                 }
 
-                addFormattedDataSection(loopEnd + " " + String.format("%08x", funcOffset) + " ;; For loop end");
+                addFormattedDataSection(loopEnd + " " + String.format("%08xh", funcOffset) + " ;; For loop end");
                 funcOffset -= 0x4000; // Adjust function offset for next label
-                addFormattedDataSection(loopStart + " " + String.format("%08x", funcOffset) + " ;; For loop start");
+                addFormattedDataSection(loopStart + " " + String.format("%08xh", funcOffset) + " ;; For loop start");
                 funcOffset -= 0x4000; // Adjust function offset for next label
-                addFormattedDataSection(loopInit + " " + String.format("%08x", funcOffset) + " ;; For loop initialization");
+                addFormattedDataSection(loopInit + " " + String.format("%08xh", funcOffset) + " ;; For loop initialization");
                 funcOffset -= 0x4000; // Adjust function offset for next label
             
 
@@ -472,6 +440,9 @@ public class MiniCCompilerGPT {
                 addFormattedCodeSection("." + loopEnd);
                 addFormattedCodeSection("BX _00 ;; Return from function");
 
+                continueStack.add(loopStart);
+                breakStack.add(loopEnd);
+
                 endif = true; // Set flag to skip next lines
                 labelCounter++;
 
@@ -480,7 +451,10 @@ public class MiniCCompilerGPT {
 
             if (trim.startsWith("do {")) {
                 String label = "__do_while_start_" + labelCounter;
-                blockEndLabel.add("__do_while_end_" + labelCounter);
+                addFormattedDataSection(label + " " + String.format("%08xh", funcOffset) + "h ;; Do-While loop start");
+                funcOffset -= 0x4000; // Adjust function offset for next label
+                continueStack.add(label);
+                breakStack.add("__do_while_end_" + labelCounter);
                 labelCounter++;
                 continue;
             }
@@ -488,8 +462,9 @@ public class MiniCCompilerGPT {
                 String condition = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
                 String startLabel = continueStack.remove(continueStack.size() - 1);
                 String endLabel = breakStack.remove(breakStack.size() - 1);
-                blockEndLabel.add("__do_while_end_" + labelCounter);
-                labelCounter++;
+                addFormattedCodeSection("B " + startLabel + " ;; Branch to do-while loop start");
+                addFormattedCodeSection(parseIf(condition, startLabel));
+                addFormattedCodeSection(parseElse(condition, endLabel));                
                 continue;
             }
 
@@ -519,6 +494,94 @@ public class MiniCCompilerGPT {
                 if (!breakStack.isEmpty()) addFormattedCodeSection("JMP " + breakStack.get(breakStack.size() - 1) + " ;; Break to label");
             } else if (trim.startsWith("continue;")) {
                 if (!continueStack.isEmpty()) addFormattedCodeSection("JMP " + continueStack.get(continueStack.size() - 1) + " ;; Continue to label");
+            } else if (trim.startsWith("printf(")) {
+                addFormattedCodeSection(".print_f_" + (printfCounter++) + " ;; Handling printf statement");
+                // Extract arguments from printf: printf("Hello, %d + %d = %d %s %c", _40, _02, _42, "World!", '☺');
+                String argsContent = trim.substring(trim.indexOf("(") + 1, trim.lastIndexOf(")"));
+                String[] args = argsContent.split("\",", 2);
+                String formatString = args[0].trim().replaceAll("^\"|\"$", ""); // Remove surrounding quotes
+                String formatArgsPart = args.length > 1 ? args[1].trim() :
+                        "";
+                String[] formatArgs = formatArgsPart.isEmpty() ? new String[0] : formatArgsPart.split(",");
+                List<String> argList = new ArrayList<>();
+                for (String fa : formatArgs) {
+                    fa = fa.replaceAll(",", "").trim();
+                    if (!fa.isEmpty()) argList.add(fa);
+                }
+
+                for (long i = 0; i < formatString.length(); i++) {
+                    char ch = formatString.charAt((int)i);
+                    if(ch == '\\' && i + 1 < formatString.length()) {
+                        char nextChar = formatString.charAt((int)(i + 1));
+                        switch (nextChar) {
+                            case 'n':
+                                addFormattedCodeSection("LDA _0a ;; Load newline character");
+                                addFormattedCodeSection("OUT ;; Output newline");
+                                break;
+                            case 't':
+                                addFormattedCodeSection("LDA _09 ;; Load tab character");
+                                addFormattedCodeSection("OUT ;; Output tab");
+                                break;
+                            case '\\':
+                                addFormattedCodeSection("LDA _5c ;; Load backslash character");
+                                addFormattedCodeSection("OUT ;; Output backslash");
+                                break;
+                            case '\"':
+                                addFormattedCodeSection("LDA _22 ;; Load double quote character");
+                                addFormattedCodeSection("OUT ;; Output double quote");
+                                break;
+                            case '\'':
+                                addFormattedCodeSection("LDA _27 ;; Load single quote character");
+                                addFormattedCodeSection("OUT ;; Output single quote");
+                                break;
+                            default:
+                                addFormattedCodeSection("LDA _" + Integer.toHexString((int) nextChar) + " ;; Load literal character");
+                                addFormattedCodeSection("OUT ;; Output literal character");
+                                break;
+                        }
+                        i++; // Skip the next character as it's part of the escape sequence
+                    } else if (ch == '%') {
+                        i++;
+                        if (i < formatString.length()) {
+                            char spec = formatString.charAt((int)i);
+                            switch (spec) {
+                                case 'i':
+                                case 'd':
+                                    if (!argList.isEmpty()) {
+                                        //ASSUME 8-BIT INT - MUST PRINT 0-255
+                                        String var = argList.remove(0);
+                                        addFormattedCodeSection("LDA " + var + " ;; Load int argument");
+                                        addFormattedCodeSection("OUTD ;; Output int");                                        
+                                    }   break;
+                                
+                                case 'c':
+                                    if (!argList.isEmpty()) {
+                                        String var = argList.remove(0);
+                                        addFormattedCodeSection("LDA " + var + " ;; Load char argument");
+                                        addFormattedCodeSection("OUTC ;; Output char");
+                                    }   break;
+                                case 's':
+                                    if (!argList.isEmpty()) {
+                                        String var = argList.remove(0);
+                                        for (int j = 0; j < strings.get(var).length(); j++) {
+                                            char strChar = strings.get(var).charAt(j);
+                                            addFormattedCodeSection("LDA _" + Integer.toHexString((int) strChar) + " ;; Load string character");
+                                            addFormattedCodeSection("OUTA ;; Output string character");
+                                        }
+                                    }   break;
+                                default:
+                                    addFormattedCodeSection("LDA _" + Integer.toHexString((int) spec) + " ;; Load literal character");
+                                    addFormattedCodeSection("OUT ;; Output literal character");
+                                    break;
+                            }
+                        }
+                    } else {
+                        addFormattedCodeSection("LDA _" + Integer.toHexString((int) ch) + " ;; Load literal character");
+                        addFormattedCodeSection("OUT ;; Output literal character");
+                    }
+                }
+            } else if (trim.startsWith("__asm")) {
+                addFormattedCodeSection(";; Begin inline assembly");
             } else if (trim.contains("BX")) {
                 addFormattedCodeSection("BX _00 ;; Return from function");
             } else if (trim.contains("POP")) {
@@ -526,7 +589,7 @@ public class MiniCCompilerGPT {
             } else if (trim.startsWith("OUT ")) {
                 String arg = trim.substring(4).trim();
                 addFormattedCodeSection("OUT " + arg + " ;; Output var");
-            } else if (trim.equals("OUTA") || trim.equals("OUTB") || trim.equals("OUTC") || trim.equals("OUTD")
+            } else if (trim.equals("OUT") || trim.equals("OUTB") || trim.equals("OUTC") || trim.equals("OUTD")
                     || trim.equals("DEC") || trim.equals("DECE") || trim.equals("HLT") || trim.equals("NOP")
                     || trim.equals("RST") || trim.equals("PST") || trim.equals("PTRI") || trim.equals("PTRD")
                     || trim.equals("PTRL") || trim.equals("PTRS") || (trim.startsWith("LDA") || trim.startsWith("LDB") || trim.startsWith("LDC") || trim.startsWith("LDD")
@@ -546,33 +609,49 @@ public class MiniCCompilerGPT {
                     || trim.startsWith("DEC") || trim.startsWith("DECE") || trim.startsWith("HLT")
                     || trim.startsWith("NOP") || trim.startsWith("RST") || trim.startsWith("PST") || trim.startsWith("PTRI") || trim.startsWith("OUTT"))) {
                 addFormattedCodeSection(trim);
+            } else if(trim.contains("[") && trim.contains("]")) {
+                String arrayName = trim.replaceAll("\\s*=.*", "").trim();
+                String indexPart = trim.replaceAll(".*\\[(.*)\\].*", "$1").trim();
+                String valuePart = trim.contains("=") ? trim.split("=")[1].replace(";", "").trim() : null;
+
+                // Names of the array will be i.e myArray[3] myArray_3
+                if (indexPart != null && !indexPart.isEmpty()) {
+                    addFormattedCodeSection("B " + arrayName + "_" + indexPart + " ;; Load array element");
+                }
+
             } else if (trim.contains("=") && containsOp(trim)) {
                 compileExpression(trim);
             } else if (trim.contains("=")) {
                 String[] parts = trim.split("=");
                 String left = parts[0].trim();
                 String right = parts[1].replace(";", "").trim();
-                
-                // Remove type declarations from left side
-                left = left.replaceAll("\\b(int|char|uint8|uint16|uint32)\\b\\s*", "");
-                
-                // Handle function calls on right side
-                if (right.contains("()")) {
-                    String funcName = right.replace("()", "");
-                    addFormattedCodeSection("B " + funcName + " ;; Call function");
-                    addFormattedCodeSection("STA " + left + " ;; Store return value");
-                } else {
-                    // Use formatOperand to handle all operand types properly
-                    String rightOperand = formatOperand(right);
-                    addFormattedCodeSection("LDA " + rightOperand + " ;; Load value");
-                    addFormattedCodeSection("STA " + left + " ;; Store value");
-                }
+                addFormattedCodeSection("LDA _" + Integer.toHexString((int) right.replace("'", "").charAt(0)) + " ;; Load the argument");
+                addFormattedCodeSection("STA  " + left + " ;; Store value from A into " + left);
             } else if (trim.contains("(") && !noIfElse) {
                 String call = trim.split("\\(")[0].trim();
                 String arg = trim.replaceAll(".*\\((.*)\\).*", "$1");
                 if (!arg.isEmpty()) {
-                    addFormattedCodeSection((isNumber(arg) ? "LDA _" : "LDA ") + arg);
-                    addFormattedCodeSection("PSAX ;; Push the argument onto the stack");
+                    String[] args = arg.split(",");
+                    for (String a : args) {
+                        a = a.trim();
+                        if (isNumber(a)) {
+                            while (a.length() < 2) a = "0" + a;
+                            addFormattedCodeSection("LDA _" + a + " ;; Load the argument");
+                            addFormattedCodeSection("PSAX ;; Push the argument onto the stack");
+                        } else if (a.startsWith("'") && a.endsWith("'") && a.length() == 3) {
+                            addFormattedCodeSection("LDA _" + Integer.toHexString((int) a.charAt(1)) + " ;; Load the argument");
+                            addFormattedCodeSection("PSAX ;; Push the argument onto the stack");
+                        } else if (a.startsWith("\"") && a.endsWith("\"")) {
+                            for (int i = 0; i < a.length(); i++) {
+                                char ch = a.charAt(i);
+                                addFormattedCodeSection("LDA _" + Integer.toHexString((int) ch) + " ;; Load the argument");
+                                addFormattedCodeSection("PSAX ;; Push the argument onto the stack");
+                            }                            
+                        } else {
+                            addFormattedCodeSection("LDA " + a + " ;; Load the argument");
+                            addFormattedCodeSection("PSAX ;; Push the argument onto the stack");
+                        }
+                    }                    
                 }
                 addFormattedCodeSection("B " + call + " ;; Call the function");
             } else if (trim.startsWith(".")) {
@@ -641,70 +720,63 @@ public class MiniCCompilerGPT {
         String labelEnd = functionName;
         String code = ";; Else block code for: " + labelEnd + "\n";
         for (Map.Entry<String, List<String>> entry : conditions.entrySet()) {
+            String key = entry.getKey();
             String value = entry.getValue().toString().replace("[", "").replace("]", "").trim();
-                       
-            // Split on comparison operators, handle <= and >= first
-            String[] parts;
-            String operator = "";
-            if (value.contains("<=")) {
-                parts = value.split("<=");
-                operator = "<=";
-            } else if (value.contains(">=")) {
-                parts = value.split(">=");
-                operator = ">=";
-            } else if (value.contains("==")) {
-                parts = value.split("==");
-                operator = "==";
-            } else if (value.contains("!=")) {
-                parts = value.split("!=");
-                operator = "!=";
-            } else if (value.contains("<")) {
-                parts = value.split("<");
-                operator = "<";
-            } else if (value.contains(">")) {
-                parts = value.split(">");
-                operator = ">";
-            } else if (value.contains("&&")) {
-                parts = value.split("&&");
-                operator = "&&";
-            } else if (value.contains("||")) {
-                parts = value.split("||");
-                operator = "||";
+            String[] parts = value.split("==|!=|<|>|<=|>=");
+            if (isNumber(parts[0].trim())) {
+                if (parts[0].trim().length() < 2) parts[0] = "0" + parts[0].trim();
+                parts[0] = "_" + parts[0].trim();
             } else {
-                code += ";; Invalid condition format\n";
-                continue;
+                parts[0] = parts[0].trim();
             }
-            
-            if (parts.length < 2) {
-                code += ";; Invalid condition format\n";
-                continue;
+            if (isNumber(parts[1].trim())) {
+                if (parts[1].trim().length() < 2) parts[1] = "0" + parts[1].trim();
+                parts[1] = "_" + parts[1].trim();
+            } else {
+                parts[1] = parts[1].trim();
             }
-            
-            String left = parts[0].trim();
-            String right = parts[1].trim();
-            
-            // Format operands correctly using formatOperand
-            String leftOperand = formatOperand(left);
-            String rightOperand = formatOperand(right);
-            
-            // Generate appropriate else condition (opposite of original)
-            switch (operator) {
-                case "==":
-                    code += "LDA " + leftOperand + " ;; Load left side\n";
-                    code += "SUB " + rightOperand + " ;; Subtract right side\n";
-                    if (labelEnd.startsWith("__asm")) code += "JNZ " + labelEnd.replace("__asm", "") + " ;; Branch to else if not equal\n";
-                    else code += "BNZ " + labelEnd + " ;; Branch to else if not equal\n";
-                    break;
-                case "!=":
-                    code += "LDA " + leftOperand + " ;; Load left side\n";
-                    code += "SUB " + rightOperand + " ;; Subtract right side\n";
-                    if (labelEnd.startsWith("__asm")) code += "JZ " + labelEnd.replace("__asm", "") + " ;; Branch to else if equal\n";
-                    else code += "BZ " + labelEnd + " ;; Branch to else if equal\n";
-                    break;
-                // For else conditions, we need the opposite logic
-                default:
-                    code += ";; Unsupported operator for else: " + operator + "\n";
-                    break;
+
+            String[] trimmedLabelParts = labelEnd.split("=");
+
+            String labelStart = "";
+            if (trimmedLabelParts.length == 2) {
+                labelStart = trimmedLabelParts[0].trim();
+                labelEnd = trimmedLabelParts[1].trim();
+            }
+
+
+            if (value.contains("==")) {
+                code += ("LDA " + parts[1] + " ;; Load left side of condition\n");
+                code += ("SUB " + parts[0] + " ;; Subtract right side of condition\n");
+                if (labelEnd.startsWith("__asm")) code += ("JNZ " + labelEnd.replace("__asm", "") + " ;; Branch to else label if not zero\n");
+                else code += ("BNZ " + labelEnd + " ;; Branch to else label if zero\n");
+            } else if (value.contains("!=")) {
+                code += ("LDA " + parts[1] + " ;; Load left side of condition\n");
+                code += ("SUB " + parts[0] + " ;; Subtract right side of condition\n");
+                if (labelEnd.startsWith("__asm")) code += ("JZ " + labelEnd.replace("__asm", "") + " ;; Branch to else label if zero\n");
+                else code += ("BZ " + labelEnd + " ;; Branch to else label if zero\n");
+            } else if (value.contains("<=")) {
+                code += ("LDA " + parts[1] + " ;; Load left side of condition\n");
+                code += ("SUB " + parts[0] + " ;; Subtract right side of condition\n");
+                if (labelEnd.startsWith("__asm")) code += ("JB " + labelEnd.replace("__asm", "") + " ;; Branch to else label if less than or equal\n");
+                else code += ("BB " + labelEnd + " ;; Branch to else label if less than or equal\n");
+            } else if (value.contains(">=")) {
+                code += ("LDA " + parts[1] + " ;; Load right side of condition\n");
+                code += ("SUB " + parts[0] + " ;; Subtract left side of condition\n");
+                if (labelEnd.startsWith("__asm")) code += ("JNB " + labelEnd.replace("__asm", "") + " ;; Branch to else label if greater than or equal\n");
+                else code += ("BNB " + labelEnd + " ;; Branch to else label if greater than or equal\n");
+            } else if (value.contains("<")) {
+                code += ("LDA " + parts[1] + " ;; Load right side of condition\n");
+                code += ("SUB " + parts[0] + " ;; Subtract left side of condition\n");
+                if (labelEnd.startsWith("__asm")) code += ("JB " + labelEnd.replace("__asm", "") + " ;; Branch to else label if less than\n");
+                else code += ("BB " + labelEnd + " ;; Branch to else label if less than\n");
+            } else if (value.contains(">")) {
+                code += ("LDA " + parts[1] + " ;; Load left side of condition\n");
+                code += ("SUB " + parts[0] + " ;; Subtract right side of condition\n");
+                if (labelEnd.startsWith("__asm")) code += ("JNB " + labelEnd.replace("__asm", "") + " ;; Branch to else label if greater than\n");
+                else code += ("BNB " + labelEnd + " ;; Branch to else label if greater than\n");
+            } else {
+                throw new IllegalArgumentException("Condición no soportada: " + value);
             }
             break;            
         }
@@ -717,99 +789,59 @@ public class MiniCCompilerGPT {
         return generateConditionalBody(condition, ifLabel, labelDest);
     }
 
-    private static String generateConditionalBody(String condition, String ifLabel, String labelDest) {
+    private static String generateConditionalBody(String condition, String ifLabel, String labelDest) throws IllegalArgumentException {
         String code = ";; Conditional code for: " + condition + " \n";
-        
-        // Handle complex conditions with && and ||
-        if (condition.contains("&&") || condition.contains("||")) {
-            // For now, just generate a simple comment for complex conditions
-            code += ";; Complex condition - simplified\n";
-            return code;
-        }
-        
-        // Split on comparison operators, handle <= and >= first
-        String[] parts;
-        String operator = "";
-        if (condition.contains("<=")) {
-            parts = condition.split("<=");
-            operator = "<=";
-        } else if (condition.contains(">=")) {
-            parts = condition.split(">=");
-            operator = ">=";
-        } else if (condition.contains("==")) {
-            parts = condition.split("==");
-            operator = "==";
-        } else if (condition.contains("!=")) {
-            parts = condition.split("!=");
-            operator = "!=";
-        } else if (condition.contains("<")) {
-            parts = condition.split("<");
-            operator = "<";
-        } else if (condition.contains(">")) {
-            parts = condition.split(">");
-            operator = ">";
-        } else {
-            return code + ";; Invalid condition\n";
-        }
-        
+        String[] parts = condition.split("==|!=|<|>|<=|>=");
         if (parts.length < 2) {
-            return code + ";; Invalid condition format\n";
+            throw new IllegalArgumentException("Condición inválida: " + condition);
         }
-        
-        String left = parts[0].trim();
-        String right = parts[1].trim();
-        
-        // Format operands correctly
-        String leftOperand = formatOperand(left);
-        String rightOperand = formatOperand(right);
-        
-        // Generate appropriate comparison
-        String label = "if_" + (labelCounter++);
-        switch (operator) {
-            case "==":
-                code += "LDA " + leftOperand + " ;; Load left side\n";
-                code += "SUB " + rightOperand + " ;; Subtract right side\n";
-                code += "BZ " + label + " ;; Branch if equal\n";
-                break;
-            case "!=":
-                code += "LDA " + leftOperand + " ;; Load left side\n";
-                code += "SUB " + rightOperand + " ;; Subtract right side\n";
-                code += "BNZ " + label + " ;; Branch if not equal\n";
-                break;
-            case "<":
-                code += "LDA " + leftOperand + " ;; Load left side\n";
-                code += "SUB " + rightOperand + " ;; Subtract right side\n";
-                code += "BB " + label + " ;; Branch if less than\n";
-                break;
-            case ">":
-                code += "LDA " + rightOperand + " ;; Load right side\n";
-                code += "SUB " + leftOperand + " ;; Subtract left side\n";
-                code += "BB " + label + " ;; Branch if greater than\n";
-                break;
-            case "<=":
-                code += "LDA " + rightOperand + " ;; Load right side\n";
-                code += "SUB " + leftOperand + " ;; Subtract left side\n";
-                code += "BNB " + label + " ;; Branch if less than or equal\n";
-                break;
-            case ">=":
-                code += "LDA " + leftOperand + " ;; Load left side\n";
-                code += "SUB " + rightOperand + " ;; Subtract right side\n";
-                code += "BNB " + label + " ;; Branch if greater than or equal\n";
-                break;
-        }
-        
-        return code;
-    }
-    
-    private static String formatOperand(String operand) {
-        if (isNumber(operand)) {
-            int num = Integer.parseInt(operand);
-            return String.format("_%02x", num);
-        } else if (variables.containsKey(operand)) {
-            return operand;
+        if (isNumber(parts[0].trim())) {
+            if (parts[0].trim().length() < 2) parts[0] = "0" + parts[0].trim();
+            parts[0] = "_" + parts[0].trim();
         } else {
-            return "_00"; // Default value
+            parts[0] = parts[0].trim();
         }
+        if (isNumber(parts[1].trim())) {
+            if (parts[1].trim().length() < 2) parts[1] = "0" + parts[1].trim();
+            parts[1] = "_" + parts[1].trim();
+        } else {
+            parts[1] = parts[1].trim();
+        }
+        if (parts[0].contains("(")) {
+            String funcName = parts[0].replaceAll(".*\\((.*)\\).*", "$1").trim();
+            String funArgs = parts[0].replaceAll("(.*)\\((.*)\\).*", "$2").trim();
+            String[] args = funArgs.split(",");
+            for (String a : args) {
+                code += "LDA " + a.trim() + " ;; Load function argument\n";
+                code += "STA " + funcName + "_arg ;; Store argument for function\n";
+            }
+            code += "B " + funcName + " ;; Call function to get left side value\n";
+        } else {
+            code += "LDA " + parts[0] + " ;; Load left side of condition\n";
+        }            
+
+        if (condition.contains("==")) {       
+            code += "SUB " + parts[1] + " ;; Subtract right side of condition\n";                        
+            if (!labelDest.startsWith("__asm")) code += "BZ " + labelDest + " ;; Branch to destination label if zero\n";
+        } else if (condition.contains("!=")) {            
+            code += "SUB " + parts[1] + " ;; Subtract right side of condition\n";
+            if (!labelDest.startsWith("__asm")) code += "BNZ " + labelDest + " ;; Branch to destination label if not zero\n";
+        } else if (condition.contains("<")) {            
+            code += "SUB " + parts[1] + " ;; Subtract right side of condition\n";
+            if (!labelDest.startsWith("__asm")) code += "BB " + labelDest + " ;; Branch to destination label if less than\n";
+        } else if (condition.contains(">")) {
+            code += "SUB " + parts[1] + " ;; Subtract left side of condition\n";
+            if (!labelDest.startsWith("__asm")) code += "BNB " + labelDest + " ;; Branch to destination label if greater than\n";
+        } else if (condition.contains("<=")) {
+            code += "SUB " + parts[1] + " ;; Subtract right side of condition\n";
+            if (!labelDest.startsWith("__asm")) code += "BB " + labelDest + " ;; Branch to destination label if less than or equal\n";
+        } else if (condition.contains(">=")) {
+            code += "SUB " + parts[1] + " ;; Subtract left side of condition\n";
+            if (!labelDest.startsWith("__asm")) code += "BNB " + labelDest + " ;; Branch to destination label if greater than or equal\n";
+        } else {
+            throw new IllegalArgumentException("Condición no soportada: " + condition);
+        }
+        return code;
     }
 
     private static boolean containsOp(String line) {
@@ -818,28 +850,44 @@ public class MiniCCompilerGPT {
 
     private static void compileExpression(String line) {
         String[] parts = line.split("=");
-        String left = parts[0].replaceAll("\\b(int|uint8|char)\\b", "").trim();
+        String left = parts[0].replace("int", "").trim();
         String expr = parts[1].replace(";", "").trim();
 
-        Pattern p = Pattern.compile("([\\w]+)\\s*([+\\-*/]|&&|\\|\\|)\\s*([\\w]+)");
+        Pattern p = Pattern.compile("([\\w]+)\\s*([+\\-*/%])\\s*([\\w]+)");
         Matcher m = p.matcher(expr);
         if (m.find()) {
             String lhs = m.group(1);
             String op = m.group(2);
             String rhs = m.group(3);
-            
-            // Format operands properly - use decimal values directly
-            String lhsOperand = formatOperand(lhs);
-            String rhsOperand = formatOperand(rhs);
-            
-            addFormattedCodeSection("LDA " + lhsOperand);
+            if (isNumber(lhs)) {
+                lhs = Integer.toHexString(Integer.parseInt(lhs));
+                while (lhs.length() < 2) lhs = "0" + lhs;
+                lhs = "_" + lhs;
+            }
+            if (isNumber(rhs)) {
+                rhs = Integer.toHexString(Integer.parseInt(rhs));
+                while (rhs.length() < 2) rhs = "0" + rhs;
+                rhs = "_" + rhs;
+            }
+            addFormattedCodeSection((isNumber(lhs) ? "LDA _" : "LDA ") + lhs);
             switch (op) {
-                case "+": addFormattedCodeSection("ADD " + rhsOperand); break;
-                case "-": addFormattedCodeSection("SUB " + rhsOperand); break;
-                case "*": addFormattedCodeSection("MUL " + rhsOperand); break;
-                case "/": addFormattedCodeSection("DIV " + rhsOperand); break;
-                case "&&": addFormattedCodeSection("AND " + rhsOperand); break;
-                case "||": addFormattedCodeSection("OR " + rhsOperand); break;
+                case "+": addFormattedCodeSection((isNumber(rhs) ? "ADD _" : "ADD ") + rhs); break;
+                case "-": addFormattedCodeSection((isNumber(rhs) ? "SUB _" : "SUB ") + rhs); break;
+                case "*": addFormattedCodeSection((isNumber(rhs) ? "MUL _" : "MUL ") + rhs); break;
+                case "/": addFormattedCodeSection((isNumber(rhs) ? "DIV _" : "DIV ") + rhs); break;
+                case "%": addFormattedCodeSection((isNumber(rhs) ? 
+                // DO SUCCESSIVE SUBTRACTION FOR MODULO
+                        "SUB _" : "SUB ") + rhs + "\n"
+                        + "JNB __mod_loop_end_" + labelCounter + " ;; If A < 0, jump to end\n"
+                        + "JMP __mod_loop_start_" + labelCounter + " ;; Repeat subtraction\n"
+                        + "__mod_loop_start_" + labelCounter + ":\n"
+                        + (isNumber(rhs) ? "SUB _" : "SUB ") + rhs + "\n"
+                        + "JNB __mod_loop_end_" + labelCounter + " ;; If A < 0, jump to end\n"
+                        + "JMP __mod_loop_start_" + labelCounter + " ;; Repeat subtraction\n"
+                        + "__mod_loop_end_" + labelCounter + ":\n"
+                        + "ADD " + rhs + " ;; Add back the last subtracted value to get the remainder");
+                        labelCounter++;
+                        break;
                 default: throw new IllegalArgumentException("Operador no soportado: " + op);
             }
             addFormattedCodeSection("STA " + left);
@@ -876,6 +924,10 @@ public class MiniCCompilerGPT {
         }
         writer.newLine();
         for (String line : codeSection) {
+            writer.write(line + "\n");
+            System.out.println(line);
+        }
+        for (String line : printfCodeSection) {
             writer.write(line + "\n");
             System.out.println(line);
         }

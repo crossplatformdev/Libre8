@@ -13,3 +13,7 @@ toolchain/target/*
 _.png.txt
 toolchain/pixels_output.txt
 toolchain/output/bin.hex
+toolchain/libre8_rs_emulator/target/*
+toolchain/emulator_log.txt
+toolchain/libre8_rs_emulator/emulator_log.txt
+/toolchain/doom-nano-master
