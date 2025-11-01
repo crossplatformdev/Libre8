@@ -309,6 +309,142 @@ See the Java generators (`BadAppleV4.java`, `Dino.java`) for scripts that create
 
 ---
 
+## Libre8 in Action
+
+Want to see Libre8 actually running code, games, and demos?  
+Here is a curated list of videos that showcase the system on YouTube.
+
+---
+
+### Core Architecture & 32-bit Experiments
+
+#### #libre8 – 8-bit PC (Sommer narration)
+High-level introduction to Libre8: architecture overview, toolchain, and how to compile and run the first programs.
+
+[![#libre8 – 8bit PC – Narración de Sommer](https://img.youtube.com/vi/l9oFCmCrPmg/hqdefault.jpg)](https://www.youtube.com/watch?v=l9oFCmCrPmg)
+
+---
+
+#### #libre8 – Compile and run a program for my 32-bit machine
+From pseudo-assembly to hex you can drop into RAM on your 32-bit Libre8 design.
+
+[![#libre8 – Compilar y correr un programa para mi 32 bit](https://img.youtube.com/vi/PoasbDXm-nU/hqdefault.jpg)](https://www.youtube.com/watch?v=PoasbDXm-nU)
+
+---
+
+#### Compile C for #libre8 (in 1 minute)
+Short, practical tutorial showing the Mini C → Libre8 toolchain in action.
+
+[![Compilar C para #libre8](https://img.youtube.com/vi/f1RG4s4klBg/hqdefault.jpg)](https://www.youtube.com/watch?v=f1RG4s4klBg)
+
+---
+
+### CPU Behavior & Microcode Experiments
+
+#### Infinite loop, invalid jump & bad instruction behavior
+What really happens when the CPU hits an infinite loop, jumps to invalid memory, or executes a bogus opcode on Libre8.
+
+[![Te enseño: Bucle Infinito | Salto a dirección inválida | Instrucción errónea – usando #libre8](https://img.youtube.com/vi/MrNMI8o1gzo/hqdefault.jpg)](https://www.youtube.com/watch?v=MrNMI8o1gzo)
+
+---
+
+#### Looping with `JMP` and new instructions
+Demonstration of loops built using `JMP` plus newly added micro-coded instructions.
+
+[![#libre8 – Bucle con la instrucción JMP y otras nuevas](https://img.youtube.com/vi/kA8s_W_YIPA/hqdefault.jpg)](https://www.youtube.com/watch?v=kA8s_W_YIPA)
+
+---
+
+#### Conditional jumps and FLAGS: `JZ` / `JC`
+Shows the FLAGS register in action and how conditional branching works on Libre8.
+
+[![#libre8 – Instrucciones de salto condicionales [JZ][JC]](https://img.youtube.com/vi/HWUx1ye7pqw/hqdefault.jpg)](https://www.youtube.com/watch?v=HWUx1ye7pqw)
+
+---
+
+### Games & Visual Demos (Playlist + Individual Videos)
+
+All the game and graphics demos live under this playlist:
+
+**Playlist – libre8 x #videogames**
+
+[![libre8 x #videogames – playlist](https://img.youtube.com/vi/nF3lPVeFBdk/hqdefault.jpg)](https://m.youtube.com/playlist?list=PLlva0633MgdYLPCTqLRyV4qq21-ZXjlRH)
+
+The individual videos:
+
+#### Dino game on Libre8
+The classic offline Dino runner, brought to Libre8 with smooth sprite updates and basic physics.
+
+[![Dino (juego) en #libre8](https://img.youtube.com/vi/pivyNm00J54/hqdefault.jpg)](https://www.youtube.com/watch?v=pivyNm00J54)
+
+---
+
+#### Monkey Island x Libre8
+A slice of *The Secret of Monkey Island* running on your home-built 8-bit computer.
+
+[![monkeyisland x #libre8](https://img.youtube.com/vi/-swf5ejil0Q/hqdefault.jpg)](https://www.youtube.com/watch?v=-swf5ejil0Q)
+
+---
+
+#### Mario Bros x Libre8
+Mario tackling the first levels, rendered and executed on the Libre8 system.
+
+[![mariobros x #libre8](https://img.youtube.com/vi/YzivHhV4YnM/hqdefault.jpg)](https://www.youtube.com/watch?v=YzivHhV4YnM)
+
+---
+
+#### Sonic the Hedgehog x Libre8
+Sonic sprinting on a homebrew CPU and GPU designed from scratch.
+
+[![sonic the hedgehog x #libre8](https://img.youtube.com/vi/qWQMwfWHpNQ/hqdefault.jpg)](https://www.youtube.com/watch?v=qWQMwfWHpNQ)
+
+---
+
+#### FFVII x Libre8 – Prelude
+The *Final Fantasy VII* “Prelude” theme, recreated for Libre8.
+
+[![#libre8 x #ffvii (Prelude)](https://img.youtube.com/vi/nF3lPVeFBdk/hqdefault.jpg)](https://www.youtube.com/watch?v=nF3lPVeFBdk)
+
+---
+
+#### FFVII x Libre8 – First mission gameplay
+A chunk of FFVII gameplay running on Libre8, including combat and field scenes.
+
+[![#ffvii x #libre8 – Gameplay of the first mission](https://img.youtube.com/vi/6o8y6ZpLkTg/hqdefault.jpg)](https://www.youtube.com/watch?v=6o8y6ZpLkTg)
+
+---
+
+#### MegaWatts x Libre8 – Finding Paradise scene
+A scene inspired by *Finding Paradise* rendered with a custom Libre8 GPU.
+
+[![MegaWatts x #libre8](https://img.youtube.com/vi/jwMzimSkhOU/hqdefault.jpg)](https://www.youtube.com/watch?v=jwMzimSkhOU)
+
+---
+
+#### Bad Apple x Libre8
+The classic “Bad Apple” video rendered on Libre8 – a stress test for the graphics pipeline.
+
+[![badapple x #libre8](https://img.youtube.com/vi/fkCY6zSlyts/hqdefault.jpg)](https://www.youtube.com/watch?v=fkCY6zSlyts)
+
+---
+
+#### Still Alive – Portal ending x Libre8
+The original *Portal* ending song “Still Alive”, performed through Libre8’s audio/graphics stack.
+
+[![Still Alive: #portal ending x #libre8](https://img.youtube.com/vi/L893D9O3mSw/hqdefault.jpg)](https://www.youtube.com/watch?v=L893D9O3mSw)
+
+---
+
+### More Libre8 Content
+
+You can find the complete, chronologically ordered list of Libre8 videos (including any new ones you upload) on the channel:
+
+- **All Libre8 videos in chronological order**  
+  👉 https://youtube.com/@elijaxapps  
+  👉 `#libre8` hashtag feed on YouTube
+
+---
+
 ## Contributing
 
 Pull requests and issues are welcome! Please see code and documentation for guidance.

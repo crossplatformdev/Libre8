@@ -21,6 +21,9 @@ use std::process::{Command, Stdio};
 use std::thread;
 
 pub struct Emulator;
+
+const DEFAULT_RAM_SIZE: usize = 4 * 1024 * 1024; // 4 MiB addressable RAM image
+const DATA_STACK_GUARD: u32 = 0x100; // reserve low RAM for MMIO/zero page
 #[inline]
 pub fn set_reg(state: &mut EmulatorState,value: u8) {
     match state.current_opcode {
@@ -86,7 +89,7 @@ pub fn set_reg(state: &mut EmulatorState,value: u8) {
             log(&format!("Printing OUTD: {}", value), None);
             state.reg_d = value;
         }
-        LDA | LDIA => {
+        LDI | LDA | LDIA => {
             log(&format!("Loading {:#X} into REG_A", value), None);
             state.reg_a = value;
         }
@@ -114,7 +117,7 @@ pub fn set_reg(state: &mut EmulatorState,value: u8) {
     // Sync changes to global state for compatibility with existing renderer
 }
 
-pub fn load_file_to_memory<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+pub fn load_file_to_memory<P: AsRef<Path>>(path: P) -> Result<(Vec<u8>, usize), Box<dyn std::error::Error>> {
     let file = fs::File::open(path)?;
     let meta = file.metadata().ok();
     let mut reader = BufReader::new(file);
@@ -146,11 +149,12 @@ pub fn load_file_to_memory<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, Box<dyn s
         line.clear(); // reuse buffer for next line to keep memory low
     }
 
+    let program_len = ram_memory.len();
     log(
-        &format!("Parsed {} hex values from file", ram_memory.len()),
+        &format!("Parsed {} hex values from file", program_len),
         None,
     );
-    Ok(ram_memory)
+    Ok((ram_memory, program_len))
 }
 
 #[inline]
@@ -209,48 +213,87 @@ pub fn init_terminal_buffer(state: &mut EmulatorState) {
     state.init_terminal_buffer();
 }
 
+fn read_byte(state: &EmulatorState, address: usize) -> u8 {
+    if address < state.ram_memory.len() {
+        state.ram_memory[address]
+    } else {
+        log(
+            &format!("Read out of bounds at {:#X} (len={})", address, state.ram_memory.len()),
+            None,
+        );
+        0
+    }
+}
+
+fn write_byte(state: &mut EmulatorState, address: usize, value: u8) {
+    if address < state.ram_memory.len() {
+        state.ram_memory[address] = value;
+    } else {
+        log(
+            &format!(
+                "Write out of bounds ignored at {:#X} (len={})",
+                address,
+                state.ram_memory.len()
+            ),
+            None,
+        );
+    }
+}
+
+fn read_u32_le(state: &EmulatorState, address: usize) -> u32 {
+    let mut value: u32 = 0;
+    for i in 0..4 {
+        let byte = read_byte(state, address + i) as u32;
+        value |= byte << (i * 8);
+    }
+    value
+}
+
+fn write_u32_le(state: &mut EmulatorState, address: usize, value: u32) {
+    for (i, byte) in value.to_le_bytes().iter().enumerate() {
+        write_byte(state, address + i, *byte);
+    }
+}
+
+fn push_data_byte(state: &mut EmulatorState, value: u8) {
+    if state.sp <= state.data_stack_min {
+        log("Data stack overflow", None);
+        return;
+    }
+    state.sp = state.sp.wrapping_sub(1);
+    write_byte(state, state.sp as usize, value);
+}
+
+fn pop_data_byte(state: &mut EmulatorState) -> u8 {
+    if state.sp >= state.stack_base {
+        log("Data stack underflow", None);
+        return 0;
+    }
+    let value = read_byte(state, state.sp as usize);
+    state.sp = state.sp.wrapping_add(1);
+    value
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     log("Starting Libre8 Emulator...", None);
 
-    let mut child = Command::new("powershell.exe")
-        .args([
-            "-NoLogo",
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            "-",
-        ])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-
-    let mut stdin = child.stdin.take().expect("stdin piped");
-    let stdout = child.stdout.take().expect("stdout piped");
-    let stderr = child.stderr.take().expect("stderr piped");
-
-    let out_handle = thread::spawn(move || {
-        let reader = BufReader::new(stdout);
-        for line in reader.lines() {
-            log(&format!("[STDOUT] {}", line.unwrap_or_default()), None);
-        }
-    });
-
-    let err_handle = thread::spawn(move || {
-        let reader = BufReader::new(stderr);
-        for line in reader.lines() {
-            log(&format!("[STDERR] {}", line.unwrap_or_default()), None);
-        }
-    });
+    // Removed PowerShell process spawning and related threads to prevent hanging.
 
     let mut state = EmulatorState::new();
     init_terminal_buffer(&mut state);
 
-    //state.ram_memory = load_file_to_memory("./../output/bin.hex")?;
-    state.ram_memory = load_file_to_memory("D:/l8rust/pixels_output.txt")?;
+    let (mut ram_image, program_len) = load_file_to_memory("bin.hex")?;
+
+    state.ram_memory = ram_image;
+    state.program_len = program_len;
+    state.stack_base = state.ram_memory.len() as u32;
+    state.data_stack_min = DATA_STACK_GUARD;
+    state.sp = state.stack_base;
+    state.bp = state.stack_base;
+    state.di = 0;
+    //state.ram_memory = load_file_to_memory("D:/l8rust/pixels_output.txt")?;
     state.keyboard_buffer.push(b' ');
-    let num_bytes = state.ram_memory.len();
+    let num_bytes = state.program_len;
     log(&format!("Loaded {} bytes into memory.", num_bytes), None);
 
     let mut window = Window::new(
@@ -393,54 +436,64 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             POKX | POKY | PXYD => {
-                let mem_addr = read_offset(state.addr, &state.ram_memory);
-                let value = if mem_addr < state.ram_memory.len() {
-                    state.ram_memory[mem_addr]
-                } else {
+                let operand_addr = state.addr + 1;
+                if operand_addr >= num_bytes {
                     log(
                         &format!(
-                            "Memory address {:#X} out of bounds (max: {})",
-                            mem_addr,
-                            state.ram_memory.len()
+                            "GPU opcode at {:#X} missing operand; advancing to {:#X}",
+                            state.addr, operand_addr
                         ),
                         None,
                     );
-                    0
-                };
-                if state.current_opcode == POKX {
-                    log(&format!("Setting X coordinate to {:#X}", value), None);
-                    state.x = value as usize % WIDTH;
-                } else if state.current_opcode == POKY {
-                    log(&format!("Setting Y coordinate to {:#X}", value), None);
-                    state.y = value as usize % HEIGHT;
-                } else if state.current_opcode == PXYD {
-                    log(
-                        &format!(
-                            "Setting Data at (X,Y)=({},{}) to {:#X}",
-                            state.x, state.y, value
-                        ),
-                        None,
-                    );
-                    if state.x < WIDTH && state.y < HEIGHT {
-                        let vga_color = value;
-                        let pixel = vga_to_rgb(vga_color);
-                        // Compute destination (scaled)
-                        let wx = state.x * SCALE;
-                        let wy = state.y * SCALE;
-                        let top_left = DISPLAY_ORIGIN + wy * WINDOW_WIDTH + wx;
-                        if (DISPLAY_POS_X + wx) + (SCALE - 1) < WINDOW_WIDTH
-                            && (DISPLAY_POS_Y + wy) + (SCALE - 1) < WINDOW_HEIGHT
-                        {
-                            // 2x2 write (SCALE)
-                            state.window_buffer[top_left] = pixel;
-                            state.window_buffer[top_left + 1] = pixel;
-                            state.window_buffer[top_left + WINDOW_WIDTH] = pixel;
-                            state.window_buffer[top_left + WINDOW_WIDTH + 1] = pixel;
-                        }
-                        state.video_buffer[state.y * WIDTH + state.x] = vga_color;
-                    }
+                    state.addr = operand_addr;
+                    continue;
                 }
-                state.addr += 5;
+                let value = state.ram_memory[operand_addr];
+                match state.current_opcode {
+                    POKX => {
+                        state.x = (value as usize) % WIDTH;
+                        log(&format!("Setting X coordinate to {}", state.x), None);
+                    }
+                    POKY => {
+                        state.y = (value as usize) % HEIGHT;
+                        log(&format!("Setting Y coordinate to {}", state.y), None);
+                    }
+                    PXYD => {
+                        if state.x < WIDTH && state.y < HEIGHT {
+                            let vga_color = value;
+                            let pixel = vga_to_rgb(vga_color);
+                            let wx = state.x * SCALE;
+                            let wy = state.y * SCALE;
+                            let top_left = DISPLAY_ORIGIN + wy * WINDOW_WIDTH + wx;
+                            if (DISPLAY_POS_X + wx) + (SCALE - 1) < WINDOW_WIDTH
+                                && (DISPLAY_POS_Y + wy) + (SCALE - 1) < WINDOW_HEIGHT
+                            {
+                                state.window_buffer[top_left] = pixel;
+                                state.window_buffer[top_left + 1] = pixel;
+                                state.window_buffer[top_left + WINDOW_WIDTH] = pixel;
+                                state.window_buffer[top_left + WINDOW_WIDTH + 1] = pixel;
+                            }
+                            state.video_buffer[state.y * WIDTH + state.x] = vga_color;
+                            log(
+                                &format!(
+                                    "Setting pixel ({}, {}) to {:#X}",
+                                    state.x, state.y, vga_color
+                                ),
+                                None,
+                            );
+                        } else {
+                            log(
+                                &format!(
+                                    "Ignoring PXYD outside viewport at ({}, {})",
+                                    state.x, state.y
+                                ),
+                                None,
+                            );
+                        }
+                    }
+                    _ => {}
+                }
+                state.addr = operand_addr + 1;
                 // Removed immediate refresh for POKX/POKY/PXYD - will be handled by batch refresh
             }
 
@@ -529,19 +582,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ),
                     None,
                 );
-                let operand = if mem_addr < state.ram_memory.len() {
-                    state.ram_memory[mem_addr]
-                } else {
-                    log(
-                        &format!(
-                            "Memory address {:#X} out of bounds (max: {})",
-                            mem_addr,
-                            state.ram_memory.len()
-                        ),
-                        None,
-                    );
-                    0
-                };
+                let operand = read_byte(&state, mem_addr);
                 set_flags(&mut state, operand);
                 set_reg(&mut state, operand);
                 state.addr = prev_addr + 5;
@@ -613,19 +654,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     None,
                 );
                 let return_value_address = read_offset(state.addr, &state.ram_memory);
-                let return_value = if return_value_address < state.ram_memory.len() {
-                    state.ram_memory[return_value_address]
-                } else {
-                    log(
-                        &format!(
-                            "Return value address {:#X} out of bounds (max: {})",
-                            return_value_address,
-                            state.ram_memory.len()
-                        ),
-                        None,
-                    );
-                    0
-                };
+                let return_value = read_byte(&state, return_value_address);
                 set_reg(&mut state, return_value);
                 state.addr = pop_stack(&mut state);
                 log(
@@ -680,31 +709,119 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     &format!("Storing register value to memory address {:#X}", mem_addr),
                     None,
                 );
-                if mem_addr < state.ram_memory.len() {
-                    match state.current_opcode {
-                        STA => state.ram_memory[mem_addr] = state.reg_a,
-                        STB => state.ram_memory[mem_addr] = state.reg_b,
-                        STC => state.ram_memory[mem_addr] = state.reg_c,
-                        STD => state.ram_memory[mem_addr] = state.reg_d,
-                        _ => state.ram_memory[mem_addr] = state.reg_a,
-                    }
-                } else {
-                    log(
-                        &format!(
-                            "Cannot store to memory address {:#X} - out of bounds (max: {})",
-                            mem_addr,
-                            state.ram_memory.len()
-                        ),
-                        None,
-                    );
-                }
+                let value = match state.current_opcode {
+                    STA => state.reg_a,
+                    STB => state.reg_b,
+                    STC => state.reg_c,
+                    STD => state.reg_d,
+                    _ => state.reg_a,
+                };
+                write_byte(&mut state, mem_addr, value);
                 state.addr = prev_addr + 5;
                 // Removed immediate refresh for STA/STB/STC/STD - will be handled by batch refresh
             }
 
+            MOV_AB | MOV_AC | MOV_AD | MOV_BA | MOV_BC | MOV_BD | MOV_CA | MOV_CB | MOV_CD => {
+                match state.current_opcode {
+                    MOV_AB => state.reg_a = state.reg_b,
+                    MOV_AC => state.reg_a = state.reg_c,
+                    MOV_AD => state.reg_a = state.reg_d,
+                    MOV_BA => state.reg_b = state.reg_a,
+                    MOV_BC => state.reg_b = state.reg_c,
+                    MOV_BD => state.reg_b = state.reg_d,
+                    MOV_CA => state.reg_c = state.reg_a,
+                    MOV_CB => state.reg_c = state.reg_b,
+                    MOV_CD => state.reg_c = state.reg_d,
+                    _ => {}
+                }
+                state.addr += 1;
+            }
+
+            MOV_AMEM | MOV_BMEM | MOV_CMEM | MOV_DMEM => {
+                let addr = state.di as usize;
+                let value = read_byte(&state, addr);
+                match state.current_opcode {
+                    MOV_AMEM => state.reg_a = value,
+                    MOV_BMEM => state.reg_b = value,
+                    MOV_CMEM => state.reg_c = value,
+                    MOV_DMEM => state.reg_d = value,
+                    _ => {}
+                }
+                state.addr += 1;
+            }
+
+            MOV_MEM_A | MOV_MEM_B | MOV_MEM_C => {
+                let addr = state.di as usize;
+                let value = match state.current_opcode {
+                    MOV_MEM_A => state.reg_a,
+                    MOV_MEM_B => state.reg_b,
+                    MOV_MEM_C => state.reg_c,
+                    _ => 0,
+                };
+                write_byte(&mut state, addr, value);
+                state.addr += 1;
+            }
+
+            MOV_SP_BP => {
+                log("Copying SP into BP", None);
+                state.bp = state.sp;
+                state.addr += 1;
+            }
+
+            MOV_REG_BP => {
+                log("Copying BP into SP", None);
+                state.sp = state.bp;
+                state.addr += 1;
+            }
+
+            MOV_DI_I => {
+                let new_di = read_offset(state.addr, &state.ram_memory) as u32;
+                log(&format!("Loading immediate pointer {:#X} into DI", new_di), None);
+                state.di = new_di;
+                state.addr += 5;
+            }
+
+            PTRI => {
+                state.di = state.di.wrapping_add(1);
+                state.addr += 1;
+            }
+
+            PTRD => {
+                state.di = state.di.wrapping_sub(1);
+                state.addr += 1;
+            }
+
+            PTRL => {
+                let ptr_addr = read_offset(state.addr, &state.ram_memory);
+                let loaded = read_u32_le(&state, ptr_addr);
+                log(
+                    &format!(
+                        "Loading DI from memory[{:#X}] => {:#X}",
+                        ptr_addr, loaded
+                    ),
+                    None,
+                );
+                state.di = loaded;
+                state.addr += 5;
+            }
+
+            PTRS => {
+                let ptr_addr = read_offset(state.addr, &state.ram_memory);
+                let di_value = state.di;
+                log(
+                    &format!(
+                        "Storing DI {:#X} into memory address {:#X}",
+                        di_value, ptr_addr
+                    ),
+                    None,
+                );
+                write_u32_le(&mut state, ptr_addr, di_value);
+                state.addr += 5;
+            }
+
             IADD | ISUB | IMUL | IDIV => {
                 state.addr += 1;
-                let operand = state.ram_memory[state.addr];
+                let operand = read_byte(&state, state.addr);
                 log(
                     &format!("Performing {:?} with operand {:#X}", state.current_opcode, operand),
                     None,
@@ -751,6 +868,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Removed immediate refresh for DEC/DECE - will be handled by batch refresh
             }
 
+            PSAX => {
+                let reg_a = state.reg_a;
+                log(
+                    &format!("Pushing REG_A value {:#X} onto stack", reg_a),
+                    None,
+                );
+                push_data_byte(&mut state, reg_a);
+                state.addr += 1;
+                // Removed immediate refresh for PSAX - will be handled by batch refresh
+            }
+
+            POPX => {
+                let value = pop_data_byte(&mut state);
+                log(&format!("Popped value {:#X} from stack into REG_A", value), None);
+                state.reg_a = value;
+                state.addr += 1;
+                // Removed immediate refresh for POP - will be handled by batch refresh
+            }
+
             NOP => {
                 state.addr += 1;
                 // No refresh for NOP to improve performance
@@ -793,17 +929,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             break;
         }
     }
-
-    stdin.flush()?;
-    drop(stdin);
-
-    let status = child.wait()?;
-    out_handle.join().ok();
-    err_handle.join().ok();
-
-    log(
-        &format!("Libre8 Emulator finished with status: {}", status),
-        None,
-    );
+    log("Emulation finished.", None);
     Ok(())
 }

@@ -45,6 +45,7 @@ public class MiniCCompilerGPT {
     private static boolean noIfElse = false;
     private static final Map<String, List<String>> conditions = new LinkedHashMap<>();
     private static int printfCounter = 0;
+    private static int printfTempCounter = 0;
     public static void main(String[] args) throws IOException {
         String input = readFile("C_example.c");
         parseGlobals(input);
@@ -550,14 +551,16 @@ public class MiniCCompilerGPT {
                                     if (!argList.isEmpty()) {
                                         //ASSUME 8-BIT INT - MUST PRINT 0-255
                                         String var = argList.remove(0);
-                                        addFormattedCodeSection("LDA " + var + " ;; Load int argument");
+                                        String operand = preparePrintfOperand(var);
+                                        addFormattedCodeSection("LDA " + operand + " ;; Load int argument");
                                         addFormattedCodeSection("OUTD ;; Output int");                                        
                                     }   break;
                                 
                                 case 'c':
                                     if (!argList.isEmpty()) {
                                         String var = argList.remove(0);
-                                        addFormattedCodeSection("LDA " + var + " ;; Load char argument");
+                                        String operand = preparePrintfOperand(var);
+                                        addFormattedCodeSection("LDA " + operand + " ;; Load char argument");
                                         addFormattedCodeSection("OUTC ;; Output char");
                                     }   break;
                                 case 's':
@@ -912,6 +915,214 @@ public class MiniCCompilerGPT {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static String preparePrintfOperand(String argument) {
+        if (argument == null) return "";
+        String trimmed = stripOuterParentheses(argument.trim());
+        if (trimmed.isEmpty()) return trimmed;
+
+        if (trimmed.startsWith("_") && trimmed.length() == 3) return trimmed;
+
+        if (isCharLiteral(trimmed)) {
+            int value = parseCharLiteralValue(trimmed);
+            if (value >= 0) return formatImmediateHex(value);
+        }
+
+        if (isNumber(trimmed)) {
+            return formatImmediateHex(Integer.parseInt(trimmed));
+        }
+
+        if (!hasTopLevelOperator(trimmed)) {
+            return trimmed;
+        }
+
+        String tempName = createPrintfTemp();
+        emitExpressionCode(tempName, trimmed);
+        return tempName;
+    }
+
+    private static boolean isCharLiteral(String token) {
+        if (token == null || token.length() < 3) return false;
+        if (!token.startsWith("'") || !token.endsWith("'")) return false;
+        return true;
+    }
+
+    private static int parseCharLiteralValue(String token) {
+        if (!isCharLiteral(token)) return -1;
+        if (token.length() == 3) {
+            return token.charAt(1);
+        }
+        if (token.length() == 4 && token.charAt(1) == '\\') {
+            char escaped = token.charAt(2);
+            switch (escaped) {
+                case 'n': return '\n';
+                case 't': return '\t';
+                case '0': return '\0';
+                case '\\': return '\\';
+                case '\'': return '\'';
+                case '"': return '"';
+                default: return escaped;
+            }
+        }
+        return -1;
+    }
+
+    private static String formatImmediateHex(int value) {
+        int normalized = value & 0xff;
+        return "_" + String.format("%02x", normalized);
+    }
+
+    private static String createPrintfTemp() {
+        String tempName = "__printf_tmp_" + (printfTempCounter++);
+        addFormattedDataSection(tempName + " " + String.format("%08xh", varOffset--) + " 00 ;; printf temp storage");
+        return tempName;
+    }
+
+    private static void emitExpressionCode(String target, String expr) {
+        String sanitized = stripOuterParentheses(expr.trim());
+        if (sanitized.isEmpty()) return;
+
+        int opIndex = findTopLevelOperatorIndex(sanitized);
+        if (opIndex == -1) {
+            String operand = normalizeOperandToken(sanitized);
+            addFormattedCodeSection(";; Compute printf argument literal: " + sanitized);
+            addFormattedCodeSection("LDA " + operand + " ;; Load printf literal");
+            addFormattedCodeSection("STA " + target + " ;; Store printf argument value");
+            return;
+        }
+
+        char operator = sanitized.charAt(opIndex);
+        String leftExpr = sanitized.substring(0, opIndex);
+        String rightExpr = sanitized.substring(opIndex + 1);
+
+        String leftOperand = operandFromExpression(leftExpr);
+        String rightOperand = operandFromExpression(rightExpr);
+
+        if (operator == '%') {
+            emitModuloSequence(target, leftOperand, rightOperand, sanitized);
+            return;
+        }
+
+        addFormattedCodeSection(";; Compute printf argument: " + sanitized);
+        addFormattedCodeSection("LDA " + leftOperand + " ;; Load left operand");
+        switch (operator) {
+            case '+':
+                addFormattedCodeSection("ADD " + rightOperand + " ;; Add right operand");
+                break;
+            case '-':
+                addFormattedCodeSection("SUB " + rightOperand + " ;; Subtract right operand");
+                break;
+            case '*':
+                addFormattedCodeSection("MUL " + rightOperand + " ;; Multiply by right operand");
+                break;
+            case '/':
+                addFormattedCodeSection("DIV " + rightOperand + " ;; Divide by right operand");
+                break;
+            default:
+                return;
+        }
+        addFormattedCodeSection("STA " + target + " ;; Store printf argument value");
+    }
+
+    private static void emitModuloSequence(String target, String leftOperand, String rightOperand, String expr) {
+        String loopId = "__printf_mod_" + (printfTempCounter++);
+        addFormattedCodeSection(";; Compute printf argument (mod): " + expr);
+        addFormattedCodeSection("LDA " + leftOperand + " ;; Load left operand");
+        addFormattedCodeSection(loopId + "_start:");
+        addFormattedCodeSection("SUB " + rightOperand + " ;; Subtract divisor");
+        addFormattedCodeSection("JNB " + loopId + "_end ;; Jump when result negative");
+        addFormattedCodeSection("JMP " + loopId + "_start ;; Continue modulo loop");
+        addFormattedCodeSection(loopId + "_end:");
+        addFormattedCodeSection("ADD " + rightOperand + " ;; Restore remainder");
+        addFormattedCodeSection("STA " + target + " ;; Store printf argument value");
+    }
+
+    private static String operandFromExpression(String expr) {
+        String trimmed = stripOuterParentheses(expr.trim());
+        if (trimmed.isEmpty()) return trimmed;
+
+        if (hasTopLevelOperator(trimmed)) {
+            String temp = createPrintfTemp();
+            emitExpressionCode(temp, trimmed);
+            return temp;
+        }
+
+        return normalizeOperandToken(trimmed);
+    }
+
+    private static String normalizeOperandToken(String token) {
+        String trimmed = stripOuterParentheses(token.trim());
+        if (trimmed.isEmpty()) return trimmed;
+
+        if (trimmed.startsWith("_") && trimmed.length() == 3) return trimmed;
+
+        if (isCharLiteral(trimmed)) {
+            int value = parseCharLiteralValue(trimmed);
+            if (value >= 0) return formatImmediateHex(value);
+        }
+
+        if (isNumber(trimmed)) {
+            return formatImmediateHex(Integer.parseInt(trimmed));
+        }
+
+        return trimmed;
+    }
+
+    private static boolean hasTopLevelOperator(String expr) {
+        return findTopLevelOperatorIndex(expr) != -1;
+    }
+
+    private static int findTopLevelOperatorIndex(String expr) {
+        if (expr == null) return -1;
+        int depth = 0;
+        for (int i = 0; i < expr.length(); i++) {
+            char ch = expr.charAt(i);
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                if (depth > 0) depth--;
+            } else if (depth == 0 && (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%')) {
+                if ((ch == '+' || ch == '-') && (i == 0 || isUnaryContext(expr, i))) continue;
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isUnaryContext(String expr, int index) {
+        for (int i = index - 1; i >= 0; i--) {
+            char ch = expr.charAt(i);
+            if (Character.isWhitespace(ch)) continue;
+            return ch == '(' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%';
+        }
+        return true;
+    }
+
+    private static String stripOuterParentheses(String expr) {
+        if (expr == null) return "";
+        String result = expr.trim();
+        while (result.startsWith("(") && result.endsWith(")")) {
+            int depth = 0;
+            boolean matches = true;
+            for (int i = 0; i < result.length(); i++) {
+                char ch = result.charAt(i);
+                if (ch == '(') depth++;
+                else if (ch == ')') {
+                    depth--;
+                    if (depth == 0 && i < result.length() - 1) {
+                        matches = false;
+                        break;
+                    }
+                }
+            }
+            if (matches && depth == 0) {
+                result = result.substring(1, result.length() - 1).trim();
+            } else {
+                break;
+            }
+        }
+        return result;
     }
 
     private static void saveToFile(String filename) throws IOException {

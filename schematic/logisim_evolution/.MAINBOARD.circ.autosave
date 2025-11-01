@@ -4,12 +4,11 @@
 
   <lib desc="#Wiring" name="0">
     <tool name="Splitter">
-      <a name="fanout" val="64"/>
-      <a name="incoming" val="64"/>
+      <a name="facing" val="south"/>
     </tool>
     <tool name="Pin">
       <a name="appearance" val="classic"/>
-      <a name="facing" val="south"/>
+      <a name="facing" val="west"/>
       <a name="width" val="8"/>
     </tool>
     <tool name="Probe">
@@ -17,10 +16,10 @@
       <a name="facing" val="west"/>
     </tool>
     <tool name="Tunnel">
-      <a name="facing" val="south"/>
+      <a name="facing" val="east"/>
     </tool>
     <tool name="Constant">
-      <a name="facing" val="west"/>
+      <a name="width" val="8"/>
     </tool>
   </lib>
   <lib desc="#Gates" name="1">
@@ -28,7 +27,6 @@
       <a name="facing" val="north"/>
     </tool>
     <tool name="AND Gate">
-      <a name="facing" val="north"/>
       <a name="size" val="30"/>
     </tool>
     <tool name="OR Gate">
@@ -75,7 +73,6 @@
     </tool>
     <tool name="Shift Register">
       <a name="appearance" val="logisim_evolution"/>
-      <a name="width" val="8"/>
     </tool>
     <tool name="Random">
       <a name="appearance" val="logisim_evolution"/>
@@ -94,24 +91,24 @@
   <lib desc="#BFH-Praktika" name="9"/>
   <lib desc="#Input/Output-Extra" name="10"/>
   <lib desc="#Soc" name="11"/>
-  <lib desc="file#REG8.circ" name="12">
-    <tool name="REG8">
-      <a name="facing" val="west"/>
-    </tool>
-  </lib>
-  <lib desc="file#Memory_Addres_Register.circ" name="13"/>
-  <lib desc="file#Instruction_Register.circ" name="14"/>
-  <lib desc="file#Memory_C.circ" name="15"/>
-  <lib desc="file#Program_Counter.circ" name="16"/>
-  <lib desc="file#Clock_C.circ" name="17"/>
-  <lib desc="file#ALU.circ" name="18"/>
-  <lib desc="file#FW.circ" name="19"/>
-  <lib desc="file#Step_Counter.circ" name="20"/>
-  <lib desc="file#STACK.circ" name="21">
+  <lib desc="file#Memory_Addres_Register.circ" name="12"/>
+  <lib desc="file#Clock_C.circ" name="13"/>
+  <lib desc="file#FW.circ" name="14"/>
+  <lib desc="file#STACK.circ" name="15">
     <tool name="STACK">
       <a name="facing" val="south"/>
     </tool>
   </lib>
+  <lib desc="file#Program_Counter.circ" name="16"/>
+  <lib desc="file#ALU.circ" name="17"/>
+  <lib desc="file#Instruction_Register.circ" name="18"/>
+  <lib desc="file#REG8.circ" name="19">
+    <tool name="REG8">
+      <a name="facing" val="west"/>
+    </tool>
+  </lib>
+  <lib desc="file#Step_Counter.circ" name="20"/>
+  <lib desc="file#Memory_C.circ" name="21"/>
   <main name="main"/>
   <options>
     <a name="gateUndefined" val="ignore"/>
@@ -160,7 +157,7 @@
     <a name="circuit" val="main"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="downloadFrequency" val="1000000.0"/>
-    <a name="simulationFrequency" val="4096.0"/>
+    <a name="simulationFrequency" val="4.0"/>
     <comp lib="0" loc="(1150,140)" name="Splitter">
       <a name="fanout" val="7"/>
       <a name="incoming" val="7"/>
@@ -757,47 +754,47 @@
       <a name="facing" val="west"/>
       <a name="size" val="30"/>
     </comp>
-    <comp lib="12" loc="(240,510)" name="REG8">
-      <a name="facing" val="west"/>
-      <a name="label" val="REG8_1"/>
-    </comp>
-    <comp lib="12" loc="(350,510)" name="REG8">
-      <a name="facing" val="west"/>
-      <a name="label" val="REG8_2"/>
-    </comp>
-    <comp lib="12" loc="(460,510)" name="REG8">
-      <a name="facing" val="west"/>
-      <a name="label" val="REG8_3"/>
-    </comp>
-    <comp lib="12" loc="(560,510)" name="REG8">
-      <a name="facing" val="west"/>
-      <a name="label" val="REG8_4"/>
-    </comp>
-    <comp lib="13" loc="(520,140)" name="MAR">
+    <comp lib="12" loc="(520,140)" name="MAR">
       <a name="label" val="MAR_1"/>
       <a name="labelloc" val="south"/>
     </comp>
-    <comp lib="14" loc="(750,160)" name="IR">
-      <a name="label" val="IR_1"/>
-      <a name="labelloc" val="south"/>
+    <comp lib="13" loc="(250,100)" name="Clock_c">
+      <a name="label" val="Clock_c_1"/>
     </comp>
-    <comp lib="15" loc="(640,160)" name="RAM_C"/>
+    <comp lib="15" loc="(250,290)" name="STACK">
+      <a name="facing" val="south"/>
+      <a name="label" val="STACK_1"/>
+    </comp>
     <comp lib="16" loc="(370,140)" name="Program_Counter">
       <a name="label" val="Program_Counter_1"/>
     </comp>
-    <comp lib="17" loc="(250,100)" name="Clock_c">
-      <a name="label" val="Clock_c_1"/>
-    </comp>
-    <comp lib="18" loc="(630,250)" name="ALU">
+    <comp lib="17" loc="(630,250)" name="ALU">
       <a name="label" val="ALU_1"/>
+    </comp>
+    <comp lib="18" loc="(750,160)" name="IR">
+      <a name="label" val="IR_1"/>
+      <a name="labelloc" val="south"/>
+    </comp>
+    <comp lib="19" loc="(240,510)" name="REG8">
+      <a name="facing" val="west"/>
+      <a name="label" val="REG8_1"/>
+    </comp>
+    <comp lib="19" loc="(350,510)" name="REG8">
+      <a name="facing" val="west"/>
+      <a name="label" val="REG8_2"/>
+    </comp>
+    <comp lib="19" loc="(460,510)" name="REG8">
+      <a name="facing" val="west"/>
+      <a name="label" val="REG8_3"/>
+    </comp>
+    <comp lib="19" loc="(560,510)" name="REG8">
+      <a name="facing" val="west"/>
+      <a name="label" val="REG8_4"/>
     </comp>
     <comp lib="20" loc="(750,70)" name="SC">
       <a name="label" val="SC_1"/>
     </comp>
-    <comp lib="21" loc="(250,290)" name="STACK">
-      <a name="facing" val="south"/>
-      <a name="label" val="STACK_1"/>
-    </comp>
+    <comp lib="21" loc="(640,160)" name="RAM_C"/>
     <comp lib="3" loc="(600,790)" name="Comparator">
       <a name="width" val="7"/>
     </comp>

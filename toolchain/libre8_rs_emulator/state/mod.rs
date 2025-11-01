@@ -15,6 +15,11 @@ pub struct EmulatorState {
     pub reg_c: u8,
     pub reg_d: u8,
 
+    // Extended CPU registers for Libre8 C ABI
+    pub sp: u32,
+    pub bp: u32,
+    pub di: u32,
+
     // Terminal state
     pub terminal_x: usize,
     pub terminal_y: usize,
@@ -25,6 +30,8 @@ pub struct EmulatorState {
 
     // Stack
     pub stack: Vec<usize>,
+    pub stack_base: u32,
+    pub data_stack_min: u32,
 
     // CPU Flags
     pub zero_flag: bool,
@@ -84,6 +91,8 @@ pub struct EmulatorState {
     pub last_instruction_time: std::time::Instant,
     pub target_instruction_duration: std::time::Duration, // Duration per instruction for target frequency
     pub instruction_batch_count: u64, // Count instructions in current batch
+
+    pub program_len: usize,
 }
 
 impl EmulatorState {
@@ -98,6 +107,10 @@ impl EmulatorState {
             reg_c: 0,
             reg_d: 0,
 
+            sp: 0,
+            bp: 0,
+            di: 0,
+
             // Terminal state
             terminal_x: 0,
             terminal_y: 0,
@@ -108,6 +121,8 @@ impl EmulatorState {
 
             // Stack
             stack: Vec::new(),
+            stack_base: 0,
+            data_stack_min: 0,
 
             // CPU Flags
             zero_flag: false,
@@ -164,6 +179,8 @@ impl EmulatorState {
             last_instruction_time: std::time::Instant::now(),
             target_instruction_duration: std::time::Duration::from_nanos(1020), // ~980KHz (1/980000 * 1e9 nanoseconds)
             instruction_batch_count: 0,
+
+            program_len: 0,
         }
     }
 
@@ -182,6 +199,9 @@ impl EmulatorState {
         self.prev_terminal_buffer.fill(' ');
         self.terminal_x = 0;
         self.terminal_y = 0;
+        self.sp = self.stack_base;
+        self.bp = self.stack_base;
+        self.di = 0;
         self.reset = false;
     }
 
@@ -211,30 +231,26 @@ impl EmulatorState {
     }
 
     pub fn embed_char_in_terminal(&mut self, c: char) {
-        match c {
-            '\n' => {
+        if c == '\n' {
+            self.terminal_x = 0;
+            self.terminal_y += 1;
+            if self.terminal_y >= TERMINAL_HEIGHT {
+                self.terminal_y = 0;
+            }
+        } else {
+            let index = self.terminal_y * TERMINAL_WIDTH + self.terminal_x;
+            if index < self.terminal_buffer.len() {
+                self.terminal_buffer[index] = c;
+            }
+            self.terminal_x += 1;
+            if self.terminal_x >= TERMINAL_WIDTH {
                 self.terminal_x = 0;
-                self.terminal_y += 1;
-            }
-            '\r' => {
-                if self.terminal_x > 0 {
-                    self.terminal_x -= 1;
+                self.terminal_y += 1;                                                                                                                                   
+                if self.terminal_y >= TERMINAL_HEIGHT {
+                    self.terminal_y = 0;
                 }
             }
-            _ => {
-                if self.terminal_x < TERMINAL_WIDTH && self.terminal_y < TERMINAL_HEIGHT {
-                    self.terminal_buffer[self.terminal_y * TERMINAL_WIDTH + self.terminal_x] = c;
-                    self.terminal_x += 1;
-                }
-            }
-        }
-
-        if self.terminal_y >= TERMINAL_HEIGHT {
-            self.terminal_buffer.copy_within(TERMINAL_WIDTH.., 0);
-            let start = TERMINAL_WIDTH * (TERMINAL_HEIGHT - 1);
-            self.terminal_buffer[start..start + TERMINAL_WIDTH].fill(' ');
-            self.terminal_y = TERMINAL_HEIGHT - 1;
-        }
+        }                                                                                                               
     }
 
     pub fn embed_int_in_terminal(&mut self, value: u8) {

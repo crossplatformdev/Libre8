@@ -768,44 +768,33 @@ pub fn display_terminal(_window: &mut Window, state: &mut EmulatorState) {
             state.terminal_pos_x - 5,
             state.terminal_pos_y - 5,
             terminal_display_width + 10,
-            terminal_display_height + 30,
+            terminal_display_height + 10 + 20,
             COL_CARD,
             state,
         );
     }
-
-    // header
-    draw_text(
-        state.terminal_pos_x,
-        state.terminal_pos_y,
-        "TERMINAL",
-        COL_TEXT,
+    // terminal area
+    let terminal_start_x = state.terminal_pos_x;
+    let terminal_start_y = state.terminal_pos_y + 20;
+    fill_rect(
+        terminal_start_x,
+        terminal_start_y,
+        terminal_display_width,
+        terminal_display_height,
         COL_CARD,
         state,
     );
 
+    // draw terminal characters
     for row in 0..TERMINAL_HEIGHT {
-        let base = row * TERMINAL_WIDTH;
-        // build current line
-        let line: &[char] = &state.terminal_buffer[base..base + TERMINAL_WIDTH];
-        // Only re-draw row if changed
-        if line != &state.prev_terminal_buffer[base..base + TERMINAL_WIDTH] {
-            // collect without extra trim by tracking last non-space char
-            let mut last_non_space = 0usize;
-            for (i, ch) in line.iter().enumerate() {
-                if *ch != ' ' {
-                    last_non_space = i + 1;
-                }
-            }
-            let s: String = line[..last_non_space].iter().collect();
-            let x = state.terminal_pos_x;
-            let y = state.terminal_pos_y + (row * char_height) + 20;
-            draw_text(x, y, &s, COL_GREEN, COL_CARD, state);
-            // shadow copy
-            state.prev_terminal_buffer[base..base + TERMINAL_WIDTH]
-                .copy_from_slice(&state.terminal_buffer[base..base + TERMINAL_WIDTH]);
+        for col in 0..TERMINAL_WIDTH {
+            let ch = state.terminal_buffer[row * TERMINAL_WIDTH + col] as char;
+            let x = terminal_start_x + col * char_width;
+            let y = terminal_start_y + row * char_height;
+            draw_char(x, y, ch, COL_LIGHT_GREEN, state);
         }
     }
+
 }
 
 // Update signature: add current_addr
